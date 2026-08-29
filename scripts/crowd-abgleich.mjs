@@ -90,11 +90,27 @@ const sharp = req('sharp');
  * Kein `brett`: im Grossformat gibt es kein Gitter, die Wertung laeuft als
  * Bar-Race. Dessen Ansichten haengen an `spielende` und `siegerehrung`.
  */
+// ⚠️ Zweiter Fund desselben Laufs, und wieder das Werkzeug: `frage2` stand
+// hier und zeigte den Willkommens-Schirm statt einer Frage
+// (.shots/crowd-abgleich/frage2.png). Der Grund steht in der Stationstabelle
+// von lib/buehne.mjs: „frage2..frage5 bauen AUF der vorigen Ansicht auf" - ihr
+// Weg ist nur `naechsteFrage()`. Dieses Werkzeug baut aber pro Station einen
+// FRISCHEN Raum (siehe die Schleife weiter unten, aus gutem Grund), also
+// schaltet der Schritt von nichts weiter und landet im Vor-Spiel-Zustand.
+//
+// Merksatz: aufbauende Stationen und frischer Raum je Station schliessen sich
+// aus. Betroffen waeren ausserdem frage3..frage5, aufloesung2, rundenintro2,
+// rundenintro3 und rundenintroR2b.
 const ABEND = [
   'lobby', 'willkommen', 'regeln', 'ablauf', 'teams',
-  'rundenintro', 'frage', 'frage2', 'aufloesung',
+  'rundenintro', 'frage', 'aufloesung',
   'pause', 'siegerehrung', 'spielende', 'danke',
 ];
+
+/** Stationen, die auf ihrer Vorgaengerin aufbauen. Mit frischem Raum je
+ *  Station liefern sie ein Bild aus einem ganz anderen Teil des Abends. */
+const AUFBAUEND = ['frage2', 'frage3', 'frage4', 'frage5', 'aufloesung2',
+  'rundenintro2', 'rundenintro3', 'rundenintroR2b'];
 
 /** Was hier steht, gibt es in CrowdQuiz nicht. Wer es trotzdem auf der
  *  Aufrufzeile mitgibt, bekommt eine Warnung statt eines stillen Bildes. */
@@ -157,7 +173,19 @@ const MESSEN = ({ schriften }) => {
 
     if (txt) {
       // 1 Schrift
-      const fam = cs.fontFamily.split(',')[0].replace(/["']/g, '').trim();
+      //
+      // ⚠️ Nicht einfach den ERSTEN Namen im Stapel nehmen. `--font-game`
+      // beginnt mit 'Twemoji Country Flags', und die Schrift hat ueberhaupt
+      // keine lateinischen Zeichen - sie liefert nur Flaggen und ist genau
+      // dafuer nach vorn gestellt. Der Text darunter wird also von der
+      // ZWEITEN Familie gemalt, Bricolage. Der erste Volldurchlauf am
+      // 29.08. hat deshalb „Wer kroent sich?" als Schriftverstoss gemeldet,
+      // und das war der einzige Verstoss auf dreizehn Stationen. Ein
+      // Werkzeug, dessen einziger Fund ein Fehlalarm ist, kostet mehr Zeit
+      // als es spart.
+      const DURCHSICHTIG = ['Twemoji Country Flags'];
+      const stapel = cs.fontFamily.split(',').map(x => x.replace(/["']/g, '').trim());
+      const fam = stapel.find(x => !DURCHSICHTIG.includes(x)) ?? stapel[0];
       if (!schriften.includes(fam)) {
         const k = `f|${fam}|${kurz}`;
         if (!gesehen.has(k)) { gesehen.add(k); funde.schrift.push({ fam, kurz, wo }); }
@@ -204,7 +232,11 @@ const verboten = gewuenscht.filter(s => s in NUR_COZYQUIZ);
 for (const s of verboten) {
   console.log(`  ⚠️ ${s}: gibt es in CrowdQuiz nicht (${NUR_COZYQUIZ[s]}). Uebersprungen.`);
 }
-const stationen = gewuenscht.filter(s => !(s in NUR_COZYQUIZ));
+for (const s of gewuenscht.filter(s => AUFBAUEND.includes(s))) {
+  console.log(`  ⚠️ ${s}: baut auf der Vorgaengerin auf, hier bekommt aber jede`);
+  console.log('     Station einen frischen Raum. Das Bild waere aus dem Vor-Spiel.');
+}
+const stationen = gewuenscht.filter(s => !(s in NUR_COZYQUIZ) && !AUFBAUEND.includes(s));
 if (!stationen.length) { console.log('  Keine gueltige CrowdQuiz-Station uebrig.'); process.exit(1); }
 fs.mkdirSync(ZIEL, { recursive: true });
 

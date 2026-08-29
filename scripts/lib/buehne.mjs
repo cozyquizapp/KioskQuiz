@@ -825,6 +825,20 @@ export async function buehneStarten(teilCfg = {}) {
         draftId: d.id, draftTitle: d.title,
         largeGroupMode: gross, nestedTeams: gross,
       });
+      // ⚠️ Und danach NACHSEHEN, nicht hoffen. Der Formatfehler vom 29.08. war
+      // vier Stunden lang unsichtbar, weil die Fraktionswappen trotzdem im Bild
+      // waren - der Avatarsatz haengt an einem anderen Feld als das Format.
+      // Ein Bild kann also richtig aussehen und das falsche Spiel zeigen.
+      // Deshalb hier ein Abbruch statt einer stillen Falschmessung: lieber gar
+      // kein Bild als eins, dem man nicht ansieht, dass es gelogen ist.
+      await sleep(500);
+      const istGross = !!letzterZustand?.largeGroupMode;
+      if (istGross !== gross) {
+        throw new Error(
+          `Format stimmt nach dem Spielstart nicht: erwartet largeGroupMode=${gross}, `
+          + `Server meldet ${istGross}. Vermutlich fehlt das Feld im startGame-Payload.`,
+        );
+      }
       // 2026-08-23: CozyGame und das 4x4-Finale sind pro Raum schaltbar und im
       // Testentwurf aus - `qq:cozyGameStart` lief deshalb in einen Fehler
       // („Pool ist leer") und die Folien waren gar nicht erreichbar.

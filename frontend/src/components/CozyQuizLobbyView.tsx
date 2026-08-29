@@ -17,7 +17,7 @@ import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
-import { QQIcon } from './QQIcon';
+import { QQIcon, QQEmojiIcon } from './QQIcon';
 import { merkeWillkommenQuelle, stempleLobbyEnde } from '../qqWillkommenUebergabe';
 import { QQ_BUEHNE_BREITE, QQ_BUEHNE_HOEHE } from '../qqBuehnenMass';
 import { wakeTeamAvatar } from '../avatarAwake';
@@ -945,7 +945,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             border: '1.5px solid var(--qq-hairline)',
             fontSize: 'clamp(15px, 1.5cqw, 20px)', fontWeight: 800, color: 'var(--qq-text)',
           }}>
-            <span aria-hidden style={{ fontSize: '1.2em' }}>👥</span>
+            {/* 2026-08-29, gefunden am ersten ehrlichen CrowdQuiz-Durchlauf
+                (.shots/crowd-abgleich/lobby.png): hier stand ein rohes 👥. Es
+                sass als flache Systemglyphe direkt unter acht 3D-Wappen, also
+                der auffaelligste Bruch im ganzen Bild. Bibel: „Keine rohen
+                Systemzeichen." Die Pille laeuft nur in CrowdQuiz (`nested`),
+                deshalb ist es beim CozyQuiz-Durchgang nie aufgefallen. */}
+            <QQEmojiIcon emoji="👥" size="1.2em" />
             {de ? 'Ein Handy pro Gruppe' : 'One phone per group'}
           </div>
         )}

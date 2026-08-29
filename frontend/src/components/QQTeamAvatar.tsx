@@ -94,6 +94,30 @@ type Props = {
  *
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
+/**
+ * Der Eckenradius einer Teammarke.
+ *
+ * ⚠️ 2026-08-29, Wolf am Kontaktbogen zur Abgabeleiste: „das gruen umrahmt sie
+ * nicht schoen ... es sieht buggy aus", und zum Schaetzchen-Reveal: „auch da
+ * passt die umrandung nicht an die kachel".
+ *
+ * Beides hatte dieselbe Wurzel, und die lag zwei Ebenen tiefer als die Bilder.
+ * `qqKachelFlaeche` hat `radius = 6` als festen PIXELwert voreingestellt, und
+ * ihr Ergebnis wird in dieser Datei NACH `baseStyle` gespreizt - die 6 px haben
+ * also `var(--qq-team-mark-radius)` an vier Stellen ueberschrieben. Gemessen an
+ * der Abgabeleiste: Kachel 6 px, Rahmen darum 16 %. Zwei Radien an einem
+ * Gegenstand, und je groesser die Marke, desto weiter laufen sie auseinander:
+ * an einem 268-px-Wappen der Startaufstellung waeren es 6 px gegen 43 px.
+ *
+ * Die Absicht stand sogar schon im Typ („Der Turm faehrt 6 px, die Teammarke
+ * 18 Prozent") - nur hat sie keiner der vier Aufrufer je mitgegeben. Ein
+ * dokumentierter Vorsatz ohne Aufrufer ist keine Regel, sondern ein Wunsch.
+ *
+ * Der Standard von `qqKachelFlaeche` bleibt bei 6 px: der Turm und das
+ * Brettraster brauchen ihn so, und die geben ihn teils ausdruecklich mit.
+ */
+const MARKEN_RADIUS = 'var(--qq-team-mark-radius, 50%)';
+
 export function QQTeamAvatar({
   avatarId, size, style, className: classNameProp, title, square, lang, blink = true, eyes = 'auto', teamId, avatarSetId, teamEmoji, flat, bgColor,
 }: Props) {
@@ -591,7 +615,7 @@ function ImageAvatar({
   // Regel ausgenommen.
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
-    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0, radius: MARKEN_RADIUS });
 
   // 2026-08-23: im BRETT darf nichts ueberstehen. Dort stossen die Felder
   // aneinander; ein Motiv, das ueber seine Kante ragt, laege im Nachbarfeld
@@ -720,7 +744,7 @@ function QuirkAvatar({
       // Und der Rand bleibt weg: eine Teammarke steht oft dicht an dicht mit
       // anderen, und zwei Raender nebeneinander lesen sich als doppelt dicke
       // Linie.
-      : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
+      : qqKachelFlaeche({ farbe: color, randStaerke: 0, radius: MARKEN_RADIUS });
 
   const imgStyle: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -825,7 +849,7 @@ function CrestAvatar({
   const imgFilter = 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))';
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
-    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0, radius: MARKEN_RADIUS });
   return (
     <span
       className={className}
@@ -875,7 +899,7 @@ function EmojiAvatar({
   // Sonst dieselbe Flaeche wie ueberall (2026-08-26, siehe ImageAvatar).
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
-    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0, radius: MARKEN_RADIUS });
 
   return (
     <span

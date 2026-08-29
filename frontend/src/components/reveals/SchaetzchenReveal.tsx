@@ -500,7 +500,19 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   <div style={{
                     order: isWin ? 1 : (above ? 2 : 1),
                     position: 'relative',
-                    borderRadius: quirkSet ? '18%' : '50%',
+                    // ⚠️ 2026-08-29, Wolf am Kontaktbogen: „schaetzchen reveal,
+                    // auch da passt die umrandung nicht an die kachel". Hier
+                    // stand hart `50%`, waehrend die Marke darin seit dem 22.08.
+                    // `--qq-team-mark-radius` traegt (auf der Buehne 16 %). Der
+                    // Gold-Ring war also ein Kreis um ein Quadrat und schaute
+                    // oben und an den Seiten darunter hervor. Genau der Fall aus
+                    // BUEHNE_2A.md: „Kacheln, keine Kreise. Ein runder Rahmen um
+                    // eine eckige Kachel schneidet sich mit ihr."
+                    // Der Ring folgt jetzt derselben Variable wie die Marke, also
+                    // rund auf dem Handy und eckig auf der Buehne. Der Zuwachs
+                    // durch `spread` rechnet der Browser selbst auf die
+                    // Aussenecke, der Ring liegt damit gleichmaessig an.
+                    borderRadius: quirkSet ? '18%' : 'var(--qq-team-mark-radius, 50%)',
                     transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
                     transition: 'transform 0.5s var(--qq-celebrate)',
                     // 2026-08-23: auf der Buehne EIN Ring statt drei Lagen. Der

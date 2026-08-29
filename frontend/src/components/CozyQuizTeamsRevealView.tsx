@@ -91,6 +91,7 @@ function ArenaTypewriter({ text, color, delayMs = 560 }: { text: string; color: 
 function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
+  const istBuehne = istBuehneG();
   const de = lang !== 'en';
   // 2026-07-17 (Wolf: Kolosseum-Schriftart -> Cinzel): Arena-Display-Font nur fuer
   // die grossen Hero-Worte (Wortmarke, Fraktionsname, „Los geht's!"). Bei Skin
@@ -180,7 +181,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
     }}>
       {factions.map((f, i) => {
         const on = placed.has(i);
-        const src = crestFor(f.avatarId);
         // 2026-07-17 (Wolf 'wappen groesser ins bild mit nicer motion'): mit dem
         // cleanen Sky-BG (keine gemalten Banner) sind die Roster-Wappen der Star →
         // deutlich groesser. Beim Platzieren: qqRosterLand (steigt gross rein,
@@ -201,16 +201,27 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                 background: `radial-gradient(circle, ${f.color}77, ${f.color}22 50%, transparent 72%)`,
                 animation: 'qqRosterGlow 0.85s ease-out both', pointerEvents: 'none',
               }} />}
-              {src
-                ? <img src={src} alt="" draggable={false} style={{
-                    position: 'relative', width: cw, height: 'auto',
-                    filter: on
-                      ? `drop-shadow(0 0 28px ${f.color}aa)`
-                      : 'grayscale(0.75) brightness(0.55)',
-                    animation: on ? 'qqRosterLand 0.62s var(--qq-ease-bounce-soft) both' : 'none',
-                    transition: 'filter 0.45s ease',
-                  }} />
-                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+              {/* ⚠️ 2026-08-29, Wolf am Kontaktbogen: „los gehts hat keine
+                  kacheln hinter den wappen". Stimmt, und der Grund stand hier:
+                  die Startaufstellung malte das Wappen als NACKTES <img> und
+                  umging damit `QQTeamAvatar` - also genau die Komponente, in
+                  die am 28.08. die Teamkachel eingezogen ist („damit ist die
+                  teamzuordnung auch auf groessere entfernung viel schneller
+                  klar"). Die Folie hat die Entscheidung nie mitbekommen.
+                  Der `<img>`-Zweig ist deshalb ganz raus, es gibt nur noch
+                  einen Weg zum Wappen. Landebewegung und Ausgrauen wandern
+                  in den `style`, den QQTeamAvatar durchreicht. */}
+              <QQTeamAvatar
+                avatarId={f.avatarId}
+                teamEmoji={qqMegaFactionSlug(f.avatarId)}
+                size={cw}
+                style={{
+                  position: 'relative',
+                  filter: on ? undefined : 'grayscale(0.75) brightness(0.55)',
+                  animation: on ? 'qqRosterLand 0.62s var(--qq-ease-bounce-soft) both' : 'none',
+                  transition: 'filter 0.45s ease',
+                }}
+              />
             </div>
             {/* Namensschild unter dem Wappen */}
             <div style={{
@@ -298,7 +309,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 'clamp(0px, 0.4cqw, 12px)', width: '100%', flexWrap: 'nowrap', padding: '0 clamp(4px, 1cqw, 22px)', boxSizing: 'border-box' }}>
               {factions.map((f, i) => {
-                const src = crestFor(f.avatarId);
                 // Wappen bewusst breiter als der Flex-Slot: die PNGs haben transparenten
                 // Rand (~35%), die Ueberlappung liegt also nur im transparenten Bereich →
                 // die SICHTBAREN Schilde werden deutlich groesser ohne echte Kollision.
@@ -314,13 +324,29 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                       position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
                       animation: `qqLineupFloat 3.6s ease-in-out ${(0.7 + i * 0.07).toFixed(2)}s infinite`,
                     }}>
-                      {/* atmende Aura in Fraktionsfarbe */}
-                      <span aria-hidden style={{ position: 'absolute', inset: '-16%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}55, ${f.color}18 48%, transparent 68%)`, animation: 'qqLineupAura 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 0 }} />
-                      {/* Podest-Glut am Boden — „stellt" das Wappen auf die Buehne */}
-                      <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: '-8%', transform: 'translateX(-50%)', width: '96%', height: '34%', borderRadius: '50%', background: `radial-gradient(ellipse, ${f.color}66, transparent 70%)`, filter: 'blur(7px)', zIndex: 0, pointerEvents: 'none' }} />
-                      {src
-                        ? <img src={src} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, width: cw, height: 'auto', filter: `drop-shadow(0 0 30px ${f.color}aa)` }} />
-                        : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+                      {/* Atmende Aura und Podest-Glut in Fraktionsfarbe.
+                          Auf der Buehne beide aus: seit die Wappen auf der
+                          Teamkachel sitzen, traegt die Kachel die Farbe. Zwei
+                          weitere Traeger derselben Aussage sind genau das, was
+                          BUEHNE_2A.md „ein Schein, der nur schmueckt" nennt -
+                          und ein 68-%-Farbverlauf um eine Kachel herum weicht
+                          auf Projektionsdistanz nur deren Kante auf. */}
+                      {!istBuehne && <span aria-hidden style={{ position: 'absolute', inset: '-16%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}55, ${f.color}18 48%, transparent 68%)`, animation: 'qqLineupAura 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 0 }} />}
+                      {!istBuehne && <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: '-8%', transform: 'translateX(-50%)', width: '96%', height: '34%', borderRadius: '50%', background: `radial-gradient(ellipse, ${f.color}66, transparent 70%)`, filter: 'blur(7px)', zIndex: 0, pointerEvents: 'none' }} />}
+                      {/* ⚠️ Auch hier lief das Wappen als nacktes <img> am
+                          QQTeamAvatar vorbei, siehe die lange Notiz am Roster
+                          weiter oben. DAS hier ist die Folie aus Wolfs
+                          Kontaktbogen („los gehts hat keine kacheln hinter den
+                          wappen"). */}
+                      <QQTeamAvatar
+                        avatarId={f.avatarId}
+                        teamEmoji={qqMegaFactionSlug(f.avatarId)}
+                        size={cw}
+                        style={{
+                          position: 'relative', zIndex: 1,
+                          filter: istBuehne ? undefined : `drop-shadow(0 0 30px ${f.color}aa)`,
+                        }}
+                      />
                     </div>
                     <div style={{
                       padding: '3px clamp(10px, 1.1cqw, 16px)', borderRadius: 'var(--qq-pill-radius)',

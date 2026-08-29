@@ -104,7 +104,7 @@ const sharp = req('sharp');
 const ABEND = [
   'lobby', 'willkommen', 'regeln', 'ablauf', 'teams',
   'rundenintro', 'frage', 'aufloesung',
-  'pause', 'siegerehrung', 'spielende', 'danke',
+  'pause', 'spielende', 'danke',
 ];
 
 /** Stationen, die auf ihrer Vorgaengerin aufbauen. Mit frischem Raum je
@@ -121,6 +121,21 @@ const NUR_COZYQUIZ = {
   kartoffel:       'Heisse Kartoffel, in CrowdQuiz herausgefiltert (QQ_BUNTE_TUETE_COZY_ONLY)',
   turmbau:         'Turm-Finale, CrowdQuiz hat eine eigene Siegerehrung',
   brett:           'Spielbrett, CrowdQuiz hat keins',
+  // ⚠️ 2026-08-29, von Wolf am Kontaktbogen gefunden, nicht von den Regeln:
+  // „tipps abgegeben, das duerfte es in CrowdQuiz nicht geben". Er hatte recht,
+  // und es war der VIERTE CozyQuiz-Pfad in dieser Liste, den ich uebersehen
+  // hatte. `siegerehrung` faehrt `springe('final-reveal')` an, also FINAL_REVEAL
+  // - eine Phase, die CrowdQuiz nie erreicht (qqRooms.ts: „Spielverlauf: Runden
+  // → GAME_OVER"). Das Bild zeigte prompt ein Spielbrett mit 64 Kacheln und
+  // „Tipp 1 von 5".
+  //
+  // Das ist der Grund, warum es den Kontaktbogen gibt: die Regeln haben diese
+  // Station dreizehnmal als „✓" durchgewunken, weil Schrift und Schein darauf
+  // stimmten. Was falsch war, war die ganze Folie.
+  //
+  // Die Siegerehrung von CrowdQuiz liegt in GAME_OVER und laeuft ueber
+  // `qq:awardStep`. Sie hat ein eigenes Werkzeug: scripts/crowd-zeremonie.mjs.
+  siegerehrung:    'FINAL_REVEAL, in CrowdQuiz unerreichbar. Die eigene Zeremonie: scripts/crowd-zeremonie.mjs',
 };
 
 const ZIEL = '.shots/crowd-abgleich';

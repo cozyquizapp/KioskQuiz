@@ -11,6 +11,9 @@
  * (/summary-test, hinter dem PIN).
  *
  * Kein Spiel, kein Socket, kein Backend - nur die Seite mit ihren Testdaten.
+ *
+ * NUTZUNG: node scripts/summary-knipsen.mjs
+ *          QQ_ARENA=1  die CrowdQuiz-Fassung statt CozyQuiz
  */
 import fs from 'node:fs';
 import { chromium } from 'playwright';
@@ -38,6 +41,16 @@ for (const [name, breite, hoehe] of [['handy', 390, 844], ['laptop', 1280, 900]]
   seite.on('pageerror', e => console.log('  [PAGEERROR]', String(e).slice(0, 140)));
   await seite.goto(`${BASE}/summary-test`, { waitUntil: 'domcontentloaded' });
   await sleep(3000);
+  // ⚠️ Die Seite hat nicht nur zwei Ansichten, sondern auch zwei FORMATE, und
+  // sie sehen verschieden aus: CrowdQuiz hat kein Brett (also einen Reiter
+  // weniger), acht Fraktionen statt Teams, Wappen statt Objektkacheln und
+  // keinen Stamm-Code. Wer nur CozyQuiz knipst, hat die Haelfte nicht gesehen.
+  // 2026-08-29 von Hand nachgeholt und sauber - damit das nicht wieder von
+  // Hand passieren muss, steht es jetzt hier.
+  if (process.env.QQ_ARENA === '1') {
+    await seite.locator('button:has-text("🏛️ An")').click();
+    await sleep(1500);
+  }
   // ⚠️ Die Testleiste liegt fest oben rechts (z-index 9999) und deckt auf dem
   // Handy genau das zu, worum es geht: Kopf und Siegerkachel. Der erste Satz
   // Bilder war deshalb zur Haelfte unbrauchbar. Sie hat keinen Schalter, also

@@ -76,6 +76,26 @@ export const QQ_BUNTE_TUETE_ACTIVE = [
  * `CozyQuizLargeGroupView` (Ø-Prozent statt Brettpunkte).
  *   crowdTop      → Umfrage
  *   crowdEstimate → Schwarmintelligenz
+ *
+ * ⚠️ „ARENA_ONLY" heisst GESPIELT, nicht LAUFFAEHIG. Das ist der Unterschied
+ * zu `_COZY_ONLY` daneben, und ich bin am 29.08. selbst darauf hereingefallen:
+ * ich habe Wolf gemeldet, ein CrowdQuiz-Satz in CozyQuiz spiele hier etwas aus,
+ * das „gar nicht vorgesehen" sei, und es gebe keinen Riegel dagegen. Der zweite
+ * Teil stimmt, der erste nicht.
+ *
+ * Beide Unterspiele haben einen ausdruecklichen CozyQuiz-Zweig im Server
+ * (qqRooms.ts: crowdTop „im Grid-Modus platzieren alle Board-Teams",
+ * crowdEstimate „Grid-Modus-Fallback: Winner = naechstes Team, wie Schaetzchen
+ * closest"). Nachgemessen mit `scripts/paarung-probe.mjs`, CozyQuiz-Raum mit
+ * CrowdQuiz-Satz: die Umfrage-Tafel baut sich auf, der Zahlenstrahl der
+ * Schwarmintelligenz zeigt Antwort, Schwarmwert und alle Teams mit ihrer
+ * Abweichung. Bilder unter `.shots/paarung/`.
+ *
+ * Deshalb wird hier NICHT gefiltert, und die Unsymmetrie zu `_COZY_ONLY` ist
+ * Absicht: die Heisse Kartoffel ist im Grossformat mechanisch kaputt
+ * (neununddreissigmal Warten), also fliegt sie raus. Diese beiden laufen, sie
+ * sind am Standard-Abend nur nicht geplant. Ein Filter wuerde dem Abend
+ * stillschweigend Fragen wegnehmen, ohne dass irgendetwas kaputt waere.
  */
 export const QQ_BUNTE_TUETE_ARENA_ONLY = [
   'crowdTop', 'crowdEstimate',
@@ -125,8 +145,9 @@ export const QQ_BUNTE_TUETE_COZY_ONLY = [
  *   * ein CozyQuiz-Satz in CrowdQuiz: die Heisse Kartoffel wird herausgefiltert,
  *     der Abend hat dann eine Frage weniger als angekuendigt.
  *   * ein CrowdQuiz-Satz in CozyQuiz: Umfrage und Schwarmintelligenz sind dort
- *     laut Register gar nicht vorgesehen, und dagegen gibt es KEINEN Riegel -
- *     `QQ_BUNTE_TUETE_ARENA_ONLY` wird im Backend nirgends gelesen.
+ *     nicht GEPLANT, laufen aber sauber - nachgemessen, siehe die Warnung an
+ *     `QQ_BUNTE_TUETE_ARENA_ONLY` oben. Der Abend bekommt also zwei Folien, die
+ *     ein Pub-Publikum nicht erwartet, und keinen Fehler.
  *
  * ⚠️ Bewusst ABGELEITET statt gepflegt (Wolf: „aus dem Inhalt lesen"). Ein
  * Feld am Entwurf waere ein weiterer Wert, der falsch stehen kann und bei

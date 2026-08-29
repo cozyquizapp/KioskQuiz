@@ -121,7 +121,12 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   prueft, prueft gegen main.css.
 * **Von den neun Bunte-Tüte-Spielen laufen im normalen Abend nur vier.**
   Aktiv: Heiße Kartoffel, Top 5, Fix It, Pin It. Nur CozyArena: Umfrage,
-  Schwarmintelligenz. Deaktiviert: Imposter, 4 gewinnt, Bluff — deren Views
+  Schwarmintelligenz. ⚠️ „Nur CozyArena" heißt **gespielt**, nicht
+  **lauffähig**: beide haben einen CozyQuiz-Zweig im Server und laufen dort
+  sauber (2026-08-29 gemessen, `scripts/paarung-probe.mjs`). Der Unterschied
+  zur Heißen Kartoffel, die im Großformat hart herausgefiltert wird, ist
+  Absicht — die ist dort mechanisch kaputt, diese beiden sind nur nicht
+  geplant. Deaktiviert: Imposter, 4 gewinnt, Bluff — deren Views
   und Server-Logik liegen weiter im Repo und funktionieren, sie werden nur
   nicht ausgespielt. Wer daran baut, baut an etwas, das niemand zu sehen
   bekommt; das ist schon mehrfach passiert. Single Source of Truth sind

@@ -26,14 +26,20 @@ import { buehneStarten, sleep, API, PIN } from './lib/buehne.mjs';
 const ZIEL = '.shots/strahl';
 fs.mkdirSync(ZIEL, { recursive: true });
 const BOTS = 24;
-const FASSUNGEN = [
-  { name: 'bestand', spanne: null, strahl: null },
-  { name: 'leise', spanne: '1', strahl: null },
-  { name: 'lesbar', spanne: '2', strahl: null },
-  { name: 'tief', spanne: '2', strahl: 'tief' },
-  { name: 'luft', spanne: '2', strahl: 'luft' },
-  { name: 'ruhig', spanne: '2', strahl: 'ruhig' },
-];
+const FASSUNGEN = (process.env.QQ_NUR ? process.env.QQ_NUR.split(',') : null)
+  ? [
+      { name: 'bestand', spanne: null, strahl: null },
+      { name: 'luft', spanne: '2', strahl: 'luft' },
+      { name: 'ruhig', spanne: '2', strahl: 'ruhig' },
+    ].filter(f => process.env.QQ_NUR.split(',').includes(f.name))
+  : [
+      { name: 'bestand', spanne: null, strahl: null },
+      { name: 'leise', spanne: '1', strahl: null },
+      { name: 'lesbar', spanne: '2', strahl: null },
+      { name: 'tief', spanne: '2', strahl: 'tief' },
+      { name: 'luft', spanne: '2', strahl: 'luft' },
+      { name: 'ruhig', spanne: '2', strahl: 'ruhig' },
+    ];
 
 const tipps = (ziel) => Array.from({ length: BOTS }, (_, i) =>
   String(Math.round(ziel * (1 + ((i % 8) - 4) * 0.035 + (Math.floor(i / 8) - 1) * 0.018))));
@@ -71,7 +77,11 @@ for (const f of FASSUNGEN) {
     } catch { /* ignore */ }
   }, f);
   await b.seite.reload({ waitUntil: 'domcontentloaded' });
-  await sleep(4200);   // Seite laden + Aufdeck-Choreographie
+  // ⚠️ 4200 ms reichten nur VOR dem Ablauf. Seit die Spanne einen Vorlauf hat
+  // und der Takt langsamer ist, endet die Choreographie erst rund 5 s nach dem
+  // Aufbau der Seite - ein Bild bei 4,2 s zeigt den Tausch mittendrin und nicht
+  // das Endbild, das hier verglichen werden soll.
+  await sleep(8000);   // Seite laden + Aufdeck-Choreographie
   await b.seite.screenshot({ path: `${ZIEL}/${f.name}.png` });
 
   // Wo steht der Inhalt wirklich? Oberste und unterste Kante aller sichtbaren

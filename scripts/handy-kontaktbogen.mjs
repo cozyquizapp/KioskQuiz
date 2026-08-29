@@ -22,7 +22,7 @@
  *   node scripts/handy-kontaktbogen.mjs
  *   node scripts/handy-kontaktbogen.mjs --mega
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, readdirSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { handyStarten, sleep, HANDY } from './lib/handy.mjs';
 
@@ -44,7 +44,12 @@ const NAME = {
   FINAL_BETTING: 'Finalwette', FINAL_REVEAL: 'Finalaufloesung',
 };
 
+/* Ordner leeren, nicht nur anlegen. Ein kuerzerer Lauf laesst sonst die Bilder
+ * des laengeren stehen: am 2026-08-29 lagen im Standard-Ordner neun Ansichten
+ * aus zwei Laeufen, drei davon aus der Zeit vor einer Aenderung. Ein Bogen, der
+ * Altes und Neues mischt, luegt lautlos. */
 mkdirSync(OUT, { recursive: true });
+for (const f of readdirSync(OUT)) if (/\.png$/.test(f)) rmSync(`${OUT}/${f}`);
 const bilder = [];
 const merke = async (seite, name) => {
   const pfad = `${OUT}/${String(bilder.length + 1).padStart(2, '0')}-${name}.png`;

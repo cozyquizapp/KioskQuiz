@@ -113,11 +113,15 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
    * Kacheln setzen ZWEI Dinge, und wer nur eines setzt, misst einen Zustand,
    * den kein Abend je zeigt: die BG-Gates fragen `!isThemed()`, das Design
    * allein schaltet die Bilder also nicht ein. Deshalb hier dasselbe Paar. */
-  if (look === 'kolosseum') {
-    await emit('qq:setQuizOptions', { arenaBackgrounds: true });
-    await emit('qq:setTheme', { themeId: 'cozy' });
-    await sleep(600);
-  }
+  //
+  // ⚠️ IMMER beide Werte setzen, auch fuer 'standard'. `qq:resetRoom` setzt das
+  // Design NICHT zurueck: es steht im Raum und ueberlebt den Reset. Ein
+  // Standard-Lauf direkt nach einem Kolosseum-Lauf hat deshalb weiter das
+  // Kolosseum gemessen - aufgefallen am 2026-08-29 daran, dass sieben
+  // Kontrastwerte auf die zweite Nachkommastelle genau gleich waren.
+  await emit('qq:setQuizOptions', { arenaBackgrounds: look === 'kolosseum' });
+  await emit('qq:setTheme', { themeId: look === 'kolosseum' ? 'cozy' : 'buehne' });
+  await sleep(600);
 
   /* Raum einrichten und Lobby OEFFNEN.
    *

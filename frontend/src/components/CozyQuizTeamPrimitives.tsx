@@ -47,7 +47,15 @@ export function CozyCard({
     <div style={{
       // Skin: opake Karten-Flaeche/Rand/Schatten + card-text. Cozy behaelt
       // das dunkle Frosted-Glass (borderColor-Tint = Team-Farbe bleibt sichtbar).
-      background: themed ? 'var(--qq-card-bg)' : 'rgba(31, 26, 46, 0.62)',
+      // 2026-08-29: `--qq-karte-grund` ist die Ausnahme fuer Karten, hinter denen
+      // ein FOTO liegt (CrowdQuiz im Kolosseum-Look, Fraktions-Welt). 0.62
+      // Deckung reichen ueber dem ruhigen Seitengrund, ueber einem Bild nicht:
+      // scripts/handy-kartengrund.mjs mass 11 von 16 Textzeilen unter WCAG
+      // 1.4.3, die Regeln-Zeile bei 3.07:1. Gesetzt wird die Variable dort, wo
+      // das Bild eingeschaltet wird (QQTeamPage), nicht hier - sonst wuerde das
+      // dunkle Frosted-Glass auch im normalen CozyQuiz dichter, und das ist
+      // eine bewusste Entscheidung und kein Fehler.
+      background: themed ? 'var(--qq-card-bg)' : 'var(--qq-karte-grund, rgba(31, 26, 46, 0.62))',
       backdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
       WebkitBackdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
       color: themed ? 'var(--qq-card-text)' : undefined,

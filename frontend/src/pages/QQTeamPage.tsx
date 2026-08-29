@@ -68,6 +68,7 @@ import type { QQAck } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqCategoryStageBg } from '../../../shared/qqCategoryTheme';
 import { setActiveThemeId, isThemed, themeIdForState, getActiveTheme, useActiveThemeId } from '../qqTheme';
+import { qqArenaType } from '../cozyQuizShared';
 import { handyTinteVars } from '../qqHandyTinte';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
@@ -637,6 +638,7 @@ export default function QQTeamPage() {
           connected={connected} error={error} onJoin={joinRoom}
           lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
           largeGroup={!!(state as any)?.largeGroupMode}
+          arenaWeltBg={qqArenaType(state)}
           takenAvatarIds={takenAvatarIds}
           takenEmojis={takenEmojis}
           takenTeamNamesLower={takenTeamNamesLower}
@@ -687,7 +689,7 @@ export default function QQTeamPage() {
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
   chosenEmoji, setChosenEmoji,
   teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip,
-  largeGroup,
+  largeGroup, arenaWeltBg,
   takenAvatarIds, takenEmojis, takenTeamNamesLower, serverEmojis,
   resumeTeam, onResume, onStammLookup, stammResult, stammStatus,
   eurovisionMode, escBgUrl, autoSwitchToast }: {
@@ -697,6 +699,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
   /** Mega Event: kein Team-Name-Schritt — Sub-Team = Faktion + Nummer. */
   largeGroup?: boolean;
+  /** Kolosseum-Look aktiv? Entscheidet allein ueber die Fraktions-Welt im
+   *  Hintergrund - siehe arenaWeltBg unten. */
+  arenaWeltBg?: boolean;
   takenAvatarIds: string[];
   takenEmojis: string[];
   takenTeamNamesLower: string[];
@@ -717,7 +722,20 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   // der GERADE gewählten Fraktion (avatarId → Slug, matcht faction-<slug>.webp).
   // Weil avatarId sich beim Wählen/Swipen ändert, ist das automatisch die Live-
   // Vorschau der Fraktionswahl → ein separater neutraler Auswahl-BG ist unnötig.
-  const arenaFactionBg = largeGroup && !eurovisionMode
+  // 2026-08-29 (Wolf: „einen einfachen bg wie in beamer bei der design wahl").
+  // Hier stand `largeGroup && !eurovisionMode`, und damit lief die Fraktions-
+  // Welt in BEIDEN CrowdQuiz-Looks. Sie gehoert aber zum Kolosseum: der Wizard
+  // bietet daneben ausdruecklich „CozyQuiz Standard - dunkler Grund, Creme-
+  // Schrift" an, und der Beamer haelt sich daran (qqArenaBeamerBgSlug prueft
+  // denselben Schalter). Das Handy war die einzige Ansicht, die ihn ignoriert
+  // hat - derselbe Fund wie 2026-07-20 bei der Siegerehrung, „Schlicht =
+  // ueberall schlicht".
+  //
+  // Es ist nicht nur eine Frage des Looks: gemessen mit
+  // scripts/handy-kartengrund.mjs blieben im Standarddesign 12 von 17
+  // Textzeilen an ihrer hellsten Stelle unter WCAG 1.4.3, weil die Karte dort
+  // `rgba(255,255,255,0.055)` ist - ueber einem Foto also praktisch nichts.
+  const arenaFactionBg = arenaWeltBg && !eurovisionMode
     ? `/arena-bg/faction-${qqMegaFactionSlug(avatarId)}.webp` : null;
   const [stammInput, setStammInput] = useState('');
   const [stammExpanded, setStammExpanded] = useState(false);
@@ -796,6 +814,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       // Team-Tint-Personalisierung. ESC bleibt immer ESC.
       background: isThemed() && !eurovisionMode ? 'var(--qq-bg)' : setupPageBg,
       color: isThemed() ? 'var(--qq-text)' : darkPage.color,
+      // 2026-08-29: Karten, hinter denen die Fraktions-Welt liegt, bekommen
+      // einen dichteren Grund. 0.62 Deckung sind ueber dem ruhigen Seitengrund
+      // richtig und ueber einem Foto zu wenig - gemessen mit
+      // scripts/handy-kartengrund.mjs. Der Wert steht hier und nicht in
+      // CozyCard, damit das normale CozyQuiz sein Frosted-Glass behaelt.
+      ['--qq-karte-grund' as string]: arenaFactionBg ? 'rgba(31, 26, 46, 0.88)' : undefined,
       transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
@@ -1727,7 +1751,10 @@ function TeamGameView({
   // 2026-07-14 (Wolf 'das bg im mobile soll immer im bg sein'): In CozyArena bleibt
   // die Welt der eigenen Fraktion dauerhaft im Hintergrund — nicht nur bei der Wahl.
   // Bild-Layer sitzt hinter dem opaken Gradient + Scrim für Text-Kontrast.
-  const arenaFactionSlug = (s as any).largeGroupMode && !isEsc
+  // 2026-08-29: gegated wie im Beitritts-Flow oben, aus denselben zwei
+  // Gruenden (Look-Treue und Lesbarkeit). qqArenaType prueft largeGroupMode,
+  // Design UND den arenaBackgrounds-Schalter in einem.
+  const arenaFactionSlug = qqArenaType(s) && !isEsc
     ? qqMegaFactionSlug(myTeam?.avatarId ?? '') : undefined;
   const arenaFactionBg = arenaFactionSlug ? `/arena-bg/faction-${arenaFactionSlug}.webp` : null;
 
@@ -1736,6 +1763,12 @@ function TeamGameView({
       ...darkPage,
       background: isThemed() && !isEsc ? 'var(--qq-bg)' : finalPageBg,
       color: isThemed() ? 'var(--qq-text)' : darkPage.color,
+      // 2026-08-29: Karten, hinter denen die Fraktions-Welt liegt, bekommen
+      // einen dichteren Grund. 0.62 Deckung sind ueber dem ruhigen Seitengrund
+      // richtig und ueber einem Foto zu wenig - gemessen mit
+      // scripts/handy-kartengrund.mjs. Der Wert steht hier und nicht in
+      // CozyCard, damit das normale CozyQuiz sein Frosted-Glass behaelt.
+      ['--qq-karte-grund' as string]: arenaFactionBg ? 'rgba(31, 26, 46, 0.88)' : undefined,
       transition: 'background 0.8s ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>

@@ -69,7 +69,9 @@ for (const name of gewuenscht) {
   const fall = FAELLE[name];
   if (!fall) { console.log(`  Unbekannter Fall „${name}"`); continue; }
   const b = await buehneStarten({
-    grossformat: false, entwurf: fall.entwurf, kategorie: fall.kategorie,
+    // QQ_GROSS=1 fuer den Gegenlauf in CrowdQuiz. Dort buendelt dieselbe
+    // Ansicht auf acht Fraktionen statt auf die Teams.
+    grossformat: process.env.QQ_GROSS === '1', entwurf: fall.entwurf, kategorie: fall.kategorie,
     frisch: true, bots: 8, antworten: 0,
   });
   await b.aufbauen('spiel');
@@ -102,7 +104,7 @@ for (const name of gewuenscht) {
       await b.emit('qq:revealAnswer');
       console.log(`  abgegeben: ${(b.helfer.zustand()?.answers ?? []).map(a => a.text).join(' ')}`);
       await sleep(3000);
-      await b.seite.screenshot({ path: `${ZIEL}/${name}-${streuung}.png` });
+      await b.seite.screenshot({ path: `${ZIEL}/${name}-${streuung}${process.env.QQ_GROSS === '1' ? '-crowd' : ''}.png` });
 
       // Nur die Wappen-Kacheln messen, nicht die Hintergrundflaechen: die sind
       // absichtlich groesser als das Bild und wuerden jede Messung zumuellen

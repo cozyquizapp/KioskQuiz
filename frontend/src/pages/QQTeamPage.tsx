@@ -2123,7 +2123,12 @@ function TeamGameView({
           //    nicht zwei.
           marginTop: 24, paddingTop: 16,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-          opacity: 0.4, userSelect: 'none',
+          // 2026-08-29 (Wolf: „mach 0.7"): war 0.4 und damit 2,45:1 gegen den
+          // Seitengrund - unter WCAG 1.4.3, obwohl die Zeile leise sein SOLL.
+          // 0.7 sind 5,11:1 und immer noch deutlich zurueckgenommen. Die
+          // Deckkraft liegt auf der ganzen Zeile, das Logo daneben wird also
+          // mit heller; das ist gewollt, Zeichen und Schrift gehoeren zusammen.
+          opacity: 0.7, userSelect: 'none',
         }}>
           <img
             src="/logo.png"

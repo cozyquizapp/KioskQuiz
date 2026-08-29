@@ -21,6 +21,22 @@ Zwei Sitzungen an einem Repo, deshalb hart aufgeteilt:
   Das sind die gemeinsamen Token. Das Handy soll sie **lesen**, nicht ändern.
   Braucht das Handy einen Wert, der dort fehlt, kurz melden statt selbst
   eintragen.
+
+  ⚠️ **Eine Ausnahme, angesagt und geprüft.** Am 29.08. hat die Handy-Sitzung
+  fünf Stellen in `main.css` geändert (Commit `fa74ae4`) und es gemeldet. Vier
+  sind `.qq-team-*`-benannt und erreichen die Bühne nicht. Die fünfte liegt im
+  Block `@media (max-width: 639px)` und ist **nicht gescoped**: `input` ging
+  von `14px !important` auf 16, `button` von `min-height: 40px !important` auf
+  44. Beides sind dokumentierte Schwellen (iOS Safari zoomt unter 16px beim
+  Antippen von selbst hinein; WCAG 2.5.5 verlangt 44 x 44), keine
+  Geschmacksfrage. Das `!important` hat vorher jede sorgfältig gesetzte Höhe
+  im Code still überstimmt.
+
+  Die Bühnen-Seite ist nachgemessen (`scripts/mobilregel-nebenwirkung.mjs`):
+  bei 390px hat `/beamer` **null** Knöpfe im Geltungsbereich, `/moderator` 16,
+  davon keiner unter 44px, kein neuer Querlauf. Die Bühne läuft ohnehin fix auf
+  1760x990 und fällt gar nicht unter die Regel. **Also nicht zurückdrehen**,
+  wer den Block später sieht: die alten Werte waren der Fehler.
 * **Dem Handy gehören:** `frontend/src/pages/QQTeamPage.tsx` (2117 Zeilen),
   `frontend/src/views/teamStyles.ts`, und die `CozyQuizTeam*.tsx` in
   `frontend/src/components/` (Action-Cards, Bottom-Sheet, Inputs, Lifecycle,

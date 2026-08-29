@@ -800,22 +800,39 @@ function CrestAvatar({
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  void src; void color; void flat; void square;
-  // 2026-07-04 (Wolf): neue Fraktions-Wappen sind vollstaendige Badges — Form +
-  // Farbe + Creme-Rand komplett gebacken, transparenter Hintergrund, 8 distinkte
-  // Silhouetten. -> flach rendern, KEINE Farb-Disc, KEIN Code-Ring; nur ein
-  // weicher Boden-Schatten fuer Tiefe. (Emblem-auf-Disc + Puls-Aura sind damit
-  // hinfaellig — der frueher stoerende pulsierende schwarze Ring ist weg.)
+  void src; void square;
+  // ── Das Wappen sitzt auf der Teamkachel ─────────────────────────────────
+  // 2026-08-28, Wolf am Livebild: „ich wuerde hinter die teamwappen immer die
+  // teamkachel in teamfarbe dahinterlegen wie auf der website, damit ist die
+  // teamzuordnung auch auf groessere entfernung viel schneller klar".
+  //
+  // Der Grund ist messbar und nicht Geschmack: die acht Wappen sind alle
+  // CREME mit creme Rand, sie unterscheiden sich nur im Emblem. Auf acht
+  // Metern ist ein Kleeblatt von einer Sanduhr nicht mehr zu trennen - die
+  // Farbe dagegen schon. Das Format buendelt bis zu 40 Teams auf acht
+  // Fraktionen; wer welche ist, muss die erste Information sein.
+  //
+  // ⚠️ Hier stand seit dem 04.07. das Gegenteil: „flach rendern, KEINE
+  // Farb-Disc" mit der Begruendung „Wappen AUF farbigem Kreis = doppelter
+  // Rahmen (Schild-im-Kreis), unruhig". Der Einwand galt einem KREIS. Die
+  // Kachel ist ein weich gerundetes Quadrat, dieselbe Flaeche, auf der in
+  // CozyQuiz jedes Team sitzt (qqKachelFlaeche, ImageAvatar, EmojiAvatar) -
+  // und genau darum geht es: eine Formsprache fuer beide Formate.
+  //
+  // `flat` bleibt flach: dort traegt die Zelle die Farbe schon (Brett,
+  // Gitter), eine zweite Flaeche darunter waere die Doppelung von damals.
   const imgSrc = crestSrc(slug);
   const imgFilter = 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))';
+  const flatStyle: CSSProperties = flat
+    ? { background: 'transparent', boxShadow: 'none' }
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
   return (
     <span
       className={className}
       title={title}
       style={{
         ...baseStyle,
-        background: 'transparent',
-        boxShadow: 'none',
+        ...flatStyle,
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
@@ -831,7 +848,9 @@ function CrestAvatar({
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}
-          style={{ width: '98%', height: '98%', objectFit: 'contain', filter: imgFilter, position: 'relative' }}
+          // Auf der Kachel kleiner, sonst deckt das Wappen die Farbe zu, die
+          // es lesbar machen soll. Ohne Kachel bleibt es wie bisher.
+          style={{ width: flat ? '98%' : '78%', height: flat ? '98%' : '78%', objectFit: 'contain', filter: imgFilter, position: 'relative' }}
         />
       )}
     </span>

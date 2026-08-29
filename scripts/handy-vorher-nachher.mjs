@@ -29,7 +29,7 @@
  */
 import { chromium } from 'playwright';
 import { createRequire } from 'node:module';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
 
 const req = createRequire(new URL('../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
@@ -133,6 +133,42 @@ if (await gesperrt()) {
   await browser.close(); process.exit(1);
 }
 
+/**
+ * Was steht gerade auf dem Handy? Text plus die Groessen der Karten.
+ *
+ * ⚠️ Das ist die Pruefung, an der dieses Werkzeug beim ersten Versuch
+ * gescheitert ist, und zwar still. Es hat behauptet, beide Haelften zeigten
+ * dieselbe Ansicht - „ein Lauf, ein stehendes Bild, zwei Aufnahmen". Wolf hat
+ * am 2026-08-29 zwei Paare nebeneinandergelegt, in denen links das
+ * Ten-Chips-Intro und rechts das Spielbrett stand: „das ist unlogisch."
+ *
+ * Er hatte recht, und die Ursache ist banal. Zwischen den beiden Aufnahmen
+ * liegen rund 700 ms, und in denen laeuft der Abend weiter. Trifft das einen
+ * Ansichtswechsel, zeigt die eine Haelfte die Karte davor und die andere die
+ * danach. Der Vergleich sieht dann nach einer riesigen Aenderung aus, die
+ * niemand gemacht hat - und im schlimmeren Fall nach einem Fehler, den es
+ * nicht gibt.
+ *
+ * Ein Werkzeug darf so etwas nicht annehmen. Es vergleicht jetzt den Zustand
+ * VOR und NACH dem Paar; sind sie verschieden, faellt das Paar weg.
+ */
+const zustand = () => team.evaluate(() => ({
+  text: (document.body.innerText || '').replace(/\s+/g, ' ').trim(),
+  // Der Text allein reicht nicht: eine Uhr, die von 26 auf 25 springt, ist
+  // kein Ansichtswechsel. Deshalb die Ziffern raus und zusaetzlich die
+  // Kartengeometrie, die sich bei einem Wechsel immer aendert.
+  form: Array.from(document.querySelectorAll('div'))
+    .map(e => e.getBoundingClientRect())
+    .filter(r => r.width > 200 && r.height > 40)
+    .map(r => `${Math.round(r.width)}x${Math.round(r.height)}@${Math.round(r.top)}`).join('|'),
+})).catch(() => null);
+
+const gleich = (a, z) => {
+  if (!a || !z) return false;
+  const ohneZiffern = (t) => t.replace(/\d+/g, '#');
+  return ohneZiffern(a.text) === ohneZiffern(z.text) && a.form === z.form;
+};
+
 /** Die alte Leiter auf `body` schreiben bzw. wieder entfernen. Entfernen
  *  genuegt, weil die echten Werte dort von React gesetzt werden - sie kommen
  *  beim naechsten Rendern von selbst zurueck. Deshalb wird nach dem Entfernen
@@ -148,6 +184,7 @@ const alteTinte = (an) => team.evaluate(({ alt, an }) => {
 }, { alt: ALT, an });
 
 const paare = [];
+const verworfen = [];
 const gesehen = new Set();
 const bis = Date.now() + SECS * 1000;
 while (Date.now() < bis) {
@@ -158,15 +195,42 @@ while (Date.now() < bis) {
     await sleep(2600);
     if (await gesperrt()) { console.log(`  – ${phase} (Sperrseite)`); continue; }
     const nr = String(paare.length + 1).padStart(2, '0');
-    // Erst NACHHER (der echte Zustand), dann umschalten - so ist der Fall,
-    // in dem das Umschalten schiefgeht, an einem fehlenden Vorher-Bild zu
-    // erkennen und nicht an einem stillschweigend falschen Nachher-Bild.
-    await team.screenshot({ path: `.shots/vergleich/${nr}-${phase}-nachher.png` });
-    await alteTinte(true); await sleep(400);
-    await team.screenshot({ path: `.shots/vergleich/${nr}-${phase}-vorher.png` });
-    await alteTinte(false); await sleep(300);
-    paare.push({ nr, phase });
-    console.log(`  ✓ ${phase}`);
+
+    /* Zwei Anlaeufe. Faellt der erste in einen Ansichtswechsel, ist der
+     * zweite eine Sekunde spaeter fast immer ruhig. Klappt auch der nicht,
+     * faellt die Station weg - lieber ein Paar weniger als ein Paar, das
+     * etwas zeigt, das nie passiert ist. */
+    let gelungen = false;
+    for (let versuch = 0; versuch < 4 && !gelungen; versuch++) {
+      if (versuch) await sleep(1800);
+      const vorZustand = await zustand();
+      // Erst NACHHER (der echte Stand), dann umschalten - so ist ein
+      // misslungenes Umschalten an einem fehlenden Vorher-Bild zu erkennen
+      // und nicht an einem stillschweigend falschen Nachher-Bild.
+      //
+      // ⚠️ Das Fenster zwischen den beiden Aufnahmen ist so klein wie moeglich
+      // gehalten. Es lag zuerst bei 700 ms, und genau darin ist der Abend
+      // weitergelaufen (siehe `zustand` oben). Eine Farbaenderung an CSS-
+      // Variablen braucht EIN Bild, nicht 400 ms; zwei Bilder Puffer sind
+      // reichlich. Damit fallen Setzen und Runden-Intro nicht mehr weg -
+      // Ansichten, die von sich aus nie ganz stillstehen.
+      await team.screenshot({ path: `.shots/vergleich/${nr}-${phase}-nachher.png` });
+      await alteTinte(true); await sleep(40);
+      await team.screenshot({ path: `.shots/vergleich/${nr}-${phase}-vorher.png` });
+      await alteTinte(false);
+      gelungen = gleich(vorZustand, await zustand());
+      if (!gelungen && versuch === 3) break;
+    }
+
+    if (!gelungen) {
+      rmSync(`.shots/vergleich/${nr}-${phase}-nachher.png`, { force: true });
+      rmSync(`.shots/vergleich/${nr}-${phase}-vorher.png`, { force: true });
+      verworfen.push(phase);
+      console.log(`  ✗ ${phase} verworfen: die Ansicht hat sich zwischen den Aufnahmen geaendert`);
+    } else {
+      paare.push({ nr, phase });
+      console.log(`  ✓ ${phase}`);
+    }
   }
   await sleep(1500);
 }
@@ -175,3 +239,7 @@ sock.close();
 
 writeFileSync('.shots/vergleich/PAARE.json', JSON.stringify(paare, null, 2));
 console.log(`\n${paare.length} Paare in .shots/vergleich/`);
+if (verworfen.length) {
+  console.log(`${verworfen.length} verworfen (Ansichtswechsel zwischen den Aufnahmen): ${verworfen.join(', ')}`);
+  console.log('Das ist kein Fehler im Spiel, sondern eine Station, die zu unruhig war.');
+}

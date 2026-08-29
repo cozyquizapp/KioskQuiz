@@ -79,7 +79,25 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   // zeige einen 'leider zu langsam'-Banner statt des offen bleibenden Inputs.
   // 2026-05-06 (Wolf-Bug 'bei Cheese zu spaet, danach kommt Eingabefeld nochmal'):
   // Phase-Gate erweitert auf QUESTION_REVEAL.
-  if (!myAnswer && (stickyExpired || (s as any).timerExpired === true)
+  // 2026-08-29 (Wolf am Livebild: „warum sind die antworten nach reveal noch
+  // offen? warum wurde das geaendert? oder ist das ein aufnahme fehler?").
+  //
+  // Kein Aufnahmefehler und nicht geaendert - die Luecke war immer da, sie
+  // braucht nur eine Bedingung, die am Abend nicht selten ist. Das Gate
+  // darueber fragte ausschliesslich nach `timerExpired`. Loest der Moderator
+  // FRUEH auf, weil alle Teams schon geantwortet haben, laeuft der Timer nie
+  // ab - und dann blieb das Eingabefeld offen, waehrend die richtige Antwort
+  // an der Wand stand.
+  //
+  // Gemessen an der laufenden Ansicht: in QUESTION_REVEAL meldete das Handy
+  // 8 von 9 Bedienelementen aktiv, darunter „Enter answer…".
+  //
+  // Die Aufloesung ist die Grenze, nicht der Timer. Steht die Antwort auf der
+  // Buehne, ist die Frage vorbei - ob die Uhr abgelaufen ist oder der
+  // Moderator weitergegangen ist, aendert daran nichts.
+  const zeitAbgelaufen = stickyExpired || (s as any).timerExpired === true;
+  const zuSpaet = zeitAbgelaufen || s.phase === 'QUESTION_REVEAL';
+  if (!myAnswer && zuSpaet
       && (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL')) {
     return (
       <div style={{
@@ -90,14 +108,25 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         animation: 'tcreveal 0.3s ease both',
         display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center',
       }}>
-        <span style={{ fontSize: 36, lineHeight: 1 }}>⏰</span>
+        {/* 2026-08-29: „Zeit vorbei" stimmt nur, wenn die Uhr WIRKLICH abgelaufen
+            ist. Loest der Moderator frueh auf, weil alle anderen schon geantwortet
+            haben, standen eben noch fuenfzehn Sekunden auf der Anzeige - und der
+            Satz waere eine kleine Luege, die der Spieler bemerkt. Zwei Faelle,
+            zwei Texte. */}
+        <QQEmojiIcon emoji={zeitAbgelaufen ? '⏰' : '✅'} size={36} />
         <div style={{ fontSize: 18, fontWeight: 900, color: '#f87171' }}>
-          {lang === 'de' ? 'Zeit vorbei!' : 'Time\'s up!'}
+          {zeitAbgelaufen
+            ? (lang === 'de' ? 'Zeit vorbei!' : 'Time\'s up!')
+            : (lang === 'de' ? 'Runde vorbei!' : 'Round over!')}
         </div>
         <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.red300, maxWidth: 260, lineHeight: 1.4 }}>
-          {lang === 'de'
-            ? 'Diesmal wart ihr leider zu langsam. Beim nächsten Mal, wir glauben an euch.'
-            : 'You were a bit too slow this time. Next round you got this!'}
+          {zeitAbgelaufen
+            ? (lang === 'de'
+              ? 'Diesmal wart ihr leider zu langsam. Beim nächsten Mal, wir glauben an euch.'
+              : 'You were a bit too slow this time. Next round you got this!')
+            : (lang === 'de'
+              ? 'Alle anderen waren schon durch, deshalb geht es weiter. Nächste Frage, nächste Chance.'
+              : 'Everyone else was done, so the quiz moved on. Next question, next chance.')}
         </div>
       </div>
     );

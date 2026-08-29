@@ -77,8 +77,15 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
     );
   }
 
+  // 2026-08-29 (Wolf: „in lobby sieht man noch einen pinken rahmen, der soll
+  // ersetzt werden, entweder entfernen wie in regeln oder creme").
+  //
+  // Entfernt, nicht eingefaerbt. Die Regelkarte direkt daneben faehrt
+  // `<CozyCard>` ohne Rand; zwei Karten nebeneinander, eine mit Kontur und
+  // eine ohne, waeren derselbe Bruch in Creme statt in Pink. `pulse` faellt
+  // mit weg - es pulste die Randfarbe, die es nicht mehr gibt.
   return (
-    <CozyCard borderColor={QQ_COLORS.brandPink} pulse>
+    <CozyCard>
       <div style={{ textAlign: 'center', padding: '4px 0' }}>
         {/* Own team — hero display */}
         <div style={{
@@ -171,7 +178,7 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '12px 4px', animation: 'tcreveal 0.5s ease both' }}>
-        <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcwobble 1.4s ease-in-out infinite' }}>👂</div>
+        <div style={{ marginBottom: 10, animation: 'tcwobble 1.4s ease-in-out infinite' }}><QQEmojiIcon emoji="👂" size={48} /></div>
         <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--qq-ink)', marginBottom: 8 }}>
           {lang === 'de' ? 'Gut zuhören!' : 'Listen up!'}
         </div>
@@ -193,7 +200,12 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
               {Array.from({ length: total }, (_, i) => (
                 <span key={i} style={{
                   width: 7, height: 7, borderRadius: '50%',
-                  background: i < step ? QQ_COLORS.brandPink : 'rgba(var(--qq-ink-rgb), 0.14)',
+                  // 2026-08-29 (Wolf: „in regeln sind noch pinke punkte unter
+                  // rules 1 of 5 auch das pink wird durch neue creme farbe
+                  // ersetzt"). Erledigte Schritte in der Tinte, offene bleiben
+                  // die leise Flaeche - der Unterschied traegt jetzt die
+                  // Helligkeit statt der Farbton.
+                  background: i < step ? 'var(--qq-ink)' : 'rgba(var(--qq-ink-rgb), 0.14)',
                   transition: 'background 0.4s ease',
                 }} />
               ))}
@@ -375,8 +387,20 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   // dringend, sie faengt nur an.
   const titelTinte = 'var(--qq-ink)';
 
-  // Card border — round color for round intro, category color for category steps
-  const introBorder = showCategory ? catColor : color;
+  // Card border.
+  //
+  // 2026-08-29 (Wolf: „so wie rundenintro rahmen ppinkish, den auch
+  // ersetzen"). Damit ist die Frage von heute Morgen entschieden: ich hatte
+  // die Rundenfarbe an der Kontur GELASSEN, mit dem Argument, sie sei auf dem
+  // Handy das einzige Mittel, das zeigt welche Runde laeuft. Wolf sieht das
+  // anders, und es ist seine Entscheidung - dazu kommt, dass direkt darunter
+  // ohnehin „Runde 1" in Buchstaben steht. Eine Farbe, die dasselbe noch
+  // einmal sagt, ist keine Information, sondern Laerm.
+  //
+  // Die KATEGORIE behaelt ihre Kontur: dort sagt die Farbe etwas, das im Text
+  // nicht steht, und sie ist dieselbe wie auf der Wand. Genau das ist der
+  // Unterschied zwischen den beiden Faellen.
+  const introBorder = showCategory ? catColor : undefined;
 
   return (
     <CozyCard borderColor={introBorder}>

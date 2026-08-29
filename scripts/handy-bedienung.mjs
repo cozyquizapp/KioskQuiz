@@ -52,21 +52,11 @@
  * VORAUSSETZUNG: Backend (4000, frisch) + Frontend (5173).
  * NUTZUNG: node scripts/handy-bedienung.mjs [--secs=200]
  */
-import { chromium } from 'playwright';
-import { createRequire } from 'node:module';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { handyStarten, sleep, HANDY } from './lib/handy.mjs';
 
-const req = createRequire(new URL('../backend/package.json', import.meta.url));
-const { io } = req('socket.io-client');
-const API = 'http://localhost:4000';
-const BASE = 'http://localhost:5173';
-const PIN = process.env.ADMIN_PIN || '2506';
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=200').split('=')[1]);
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
-/* iPhone 14. Bewusst kein kleineres Geraet: 390x844 ist die haeufigste Breite,
- * und was hier zu eng ist, ist auf einem SE erst recht zu eng. */
-const BREITE = 390, HOEHE = 844;
+const { width: BREITE, height: HOEHE } = HANDY;
 const MIN_ZIEL = 44;      // WCAG 2.5.5
 const MIN_ABSTAND = 8;    // WCAG 2.5.8
 const MIN_EINGABE = 16;   // iOS Safari zoomt darunter
@@ -85,10 +75,24 @@ const BEDIENUNG = ({ minZiel, minAbstand, minEingabe }) => {
 
   const alle = Array.from(document.querySelectorAll(WAHL)).filter(sichtbar);
 
-  /* Verschachtelte Bedienelemente einmal zaehlen. Der Daumen trifft die
-   * AEUSSERE Flaeche; ein Zeichen-Span mit role=button darin ist kein
-   * eigenes Ziel, sondern dieselbe Flaeche noch einmal. */
-  const ziele = alle.filter(el => !alle.some(o => o !== el && o.contains(el)));
+  /* Verschachtelte Bedienelemente einmal zaehlen.
+   *
+   * ⚠️ Die erste Fassung hat jedes Element weggeworfen, das IRGENDEIN anderes
+   * Bedienelement enthielt. Das klang richtig - der Daumen trifft die aeussere
+   * Flaeche - und war falsch: auf der Setup-Seite liegt ein grosser Behaelter
+   * mit `tabindex` um alles, und damit meldete das Werkzeug fuer eine Seite mit
+   * Avatarwahl, Namensfeld und Beitreten-Knopf GENAU EIN Ziel. Der Bericht sagte
+   * „nichts gefunden", weil er fast nichts angesehen hatte.
+   *
+   * Ein Elternteil ist nur dann dasselbe Ziel, wenn es auch dieselbe FLAECHE
+   * hat. Deckt das Kind weniger als 80 Prozent des Elternteils, sind es zwei
+   * Ziele: ein Knopf in einer Karte ist nicht die Karte. */
+  const flaeche = (e) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
+  const ziele = alle.filter(el => !alle.some(o => {
+    if (o === el || !el.contains(o)) return false;
+    const fe = flaeche(el);
+    return fe > 0 && flaeche(o) / fe >= 0.8;      // Kind deckt den Elternteil
+  }));
 
   const beschreib = (el) => {
     const r = el.getBoundingClientRect();
@@ -137,114 +141,48 @@ const BEDIENUNG = ({ minZiel, minAbstand, minEingabe }) => {
 };
 
 /* ── Aufbau ───────────────────────────────────────────────────────────────── */
-const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
-if (!health?.ok) { console.error('Backend nicht erreichbar (4000).'); process.exit(1); }
-console.log(`Backend ok (build ${health.build ?? '?'})`);
 mkdirSync('.shots/bedienung', { recursive: true });
 
-const browser = await chromium.launch({
-  headless: true,
-  ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}),
-});
-const ctxMain = await browser.newContext({ viewport: { width: 1760, height: 990 } });
-await ctxMain.addInitScript(() => {
-  try {
-    sessionStorage.setItem('qq_admin_unlocked', '1');
-    sessionStorage.setItem('qq_admin_pin', '2506');
-    localStorage.setItem('qq-admin-pin', '2506');
-  } catch { /* ignore */ }
-});
-const ctxTeam = await browser.newContext({
-  viewport: { width: BREITE, height: HOEHE }, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
-});
-await ctxTeam.addInitScript(() => {
-  try {
-    localStorage.setItem('qq_teamName', 'Testtrupp');
-    localStorage.setItem('qq_avatarId', 'fox');
-  } catch { /* ignore */ }
-});
-
-const beamer = await ctxMain.newPage();
-await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
-await beamer.waitForSelector('[data-qq-room]', { timeout: 20000 }).catch(() => {});
-const roomCode = await beamer.evaluate(() =>
-  document.querySelector('[data-qq-room]')?.getAttribute('data-qq-room') ?? 'default').catch(() => 'default');
-
-const sock = io(API, { transports: ['websocket'] });
-await new Promise((res, rej) => {
-  sock.on('connect', res); sock.on('connect_error', rej);
-  setTimeout(() => rej(new Error('Socket-Timeout')), 8000);
-});
-const emit = (ev, extra = {}) => new Promise(res => sock.emit(ev, { roomCode, ...extra }, res));
-await emit('qq:joinModerator', { pin: PIN });
-await emit('qq:resetRoom', { confirm: true });
-await sleep(900);
-await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/clearBots`, {
-  method: 'POST', headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ pin: PIN }),
-}).catch(() => {});
-await sleep(500);
-console.log(`Raum ${roomCode} frisch.`);
-
-const team = await ctxTeam.newPage();
-team.on('dialog', async (d) => { await d.dismiss(); });
-await team.goto(`${BASE}/team`, { waitUntil: 'domcontentloaded' });
-await sleep(6000);
-
-/* Die Setup-Ansicht zaehlt mit: sie ist die erste, die ein Gast sieht, und die
- * einzige, in der er tippt statt tippt. Gemessen wird sie VOR dem Beitritt. */
 const berichte = [];
-const messen = async (name) => {
-  const m = await team.evaluate(BEDIENUNG, {
+const messen = async (seite, name) => {
+  const m = await seite.evaluate(BEDIENUNG, {
     minZiel: MIN_ZIEL, minAbstand: MIN_ABSTAND, minEingabe: MIN_EINGABE,
   }).catch(() => null);
   if (!m) return;
   berichte.push({ name, ...m });
-  await team.screenshot({ path: `.shots/bedienung/${String(berichte.length).padStart(2, '0')}-${name}.png` });
-  console.log(`  ✓ ${name} (${m.ziele.length} Ziele)`);
+  await seite.screenshot({ path: `.shots/bedienung/${String(berichte.length).padStart(2, '0')}-${name}.png` });
+  console.log(`  ✓ ${name} (${m.ziele.length} Ziele, ${m.zuKlein.length} zu klein)`);
 };
-await messen('SETUP');
 
-let beigetreten = false;
-for (let i = 0; i < 20 && !beigetreten; i++) {
-  const btn = team.locator('button', { hasText: /Wieder einsteigen|Spiel beitreten|Rejoin|Join game|Los geht|einsteigen|Beitreten/i }).first();
-  if (await btn.count().catch(() => 0)) { await btn.click({ timeout: 2000 }).catch(() => {}); await sleep(1800); }
-  else await sleep(1200);
-  const text = await team.evaluate(() => document.body.innerText || '').catch(() => '');
-  beigetreten = /READY|BEREIT|Waiting for opponents|Warte auf/i.test(text);
-}
-console.log(beigetreten ? 'Handy beigetreten.' : '⚠️  Handy nicht sichtbar beigetreten.');
+/* Die SETUP-Ansicht zaehlt mit, und sie ist der dichteste Ort ueberhaupt: dort
+ * waehlt ein Gast Avatar, Emoji und Namen. Sie laeuft vor dem Beitritt. */
+/* Die Setup-Ansicht misst ein FRISCHER Gast, ohne gespeichertes Team und VOR
+ * dem Spielstart - sonst springt das Handy in die Lobby oder landet auf der
+ * Sperrseite. Siehe `frischerGast` in lib/handy.mjs. */
+const b = await handyStarten({
+  secs: SECS,
+  vorBeitritt: async (seite) => { await messen(seite, 'SETUP'); },
+});
 
-const mod = await ctxMain.newPage();
-mod.on('dialog', async (d) => { await d.dismiss(); });
-await mod.goto(`${BASE}/moderator-test?run=1`, { waitUntil: 'domcontentloaded' });
-await sleep(6000);
+await b.abendMitfahren(async (phase) => { await messen(b.handy, phase); });
 
-/* Reissleine, wie in handy-referenz.mjs: die Sperrseite hat dort schon einmal
- * einen ganzen Bericht wertlos gemacht. */
-const gesperrt = () => team.evaluate(() =>
-  /Quiz läuft schon|Quiz already running|nicht angemeldet|not registered/i.test(document.body.innerText || ''))
-  .catch(() => false);
-if (await gesperrt()) {
-  console.error('\n⚠️  ABBRUCH: das Handy haengt auf der Sperrseite. Backend frisch starten.');
-  await browser.close(); process.exit(1);
-}
-
-const gesehen = new Set();
-const bis = Date.now() + SECS * 1000;
-while (Date.now() < bis) {
-  const phase = await beamer.evaluate(() =>
-    document.querySelector('[data-qq-phase]')?.getAttribute('data-qq-phase') ?? null).catch(() => null);
-  if (phase && !gesehen.has(phase)) {
-    gesehen.add(phase);
-    await sleep(2600);
-    if (await gesperrt()) { console.log(`  – ${phase} (Sperrseite)`); continue; }
-    await messen(phase);
+/* Menue und Kurz-Regeln haengen nicht an einer Phase und fehlen deshalb in
+ * jeder Messung, die nur den Phasen folgt. Sie kommen ZUM SCHLUSS.
+ *
+ * ⚠️ Sie standen zuerst mittendrin, und der Abend blieb dann in der Lobby
+ * stehen: nach dem Oeffnen des Menues kamen keine neuen Phasen mehr, und der
+ * Bericht meldete drei Ansichten statt neun - ohne zu sagen, dass sechs
+ * fehlten. Ein Werkzeug, das die Ansicht bedient, die es messen soll, greift
+ * in den Lauf ein. Am Ende kann es das nicht mehr. */
+for (const was of ['menue', 'regeln']) {
+  if (await b.oeffnen(was)) {
+    await messen(b.handy, was.toUpperCase());
+    await b.schliessen(was);
+  } else {
+    console.log(`  – ${was.toUpperCase()} nicht erreichbar`);
   }
-  await sleep(1500);
 }
-await browser.close();
-sock.close();
+await b.schliessen();
 
 /* ── Bericht ──────────────────────────────────────────────────────────────── */
 const z = [`# Laesst sich /team bedienen?`, '',

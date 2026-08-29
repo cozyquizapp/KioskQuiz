@@ -117,13 +117,45 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
     /Quiz läuft schon|Quiz already running|nicht angemeldet|not registered/i
       .test(document.body.innerText || '')).catch(() => false);
 
-  /* Die Setup-Ansicht, BEVOR beigetreten wird.
+  /**
+   * Ein FRISCHER Gast: eigener Browser-Kontext ohne gespeichertes Team.
+   *
+   * ⚠️ Ohne den gibt es die Setup-Ansicht in keiner Messung. Der Harness legt
+   * Teamname und Avatar in den localStorage, damit der Beitritt zuverlaessig
+   * klappt - und genau deshalb springt das Handy sofort in die Lobby. Am
+   * 2026-08-29 hat eine Messung deshalb eine Datei „01-SETUP.png" geschrieben,
+   * auf der die Lobby zu sehen war, und fuer die dichteste Ansicht der App ein
+   * einziges Bedienelement gemeldet.
+   *
+   * Der Gast tritt NICHT bei. Er sieht nur zu, und wird danach geschlossen.
+   */
+  const frischerGast = async (was) => {
+    const ctx = await browser.newContext({
+      viewport: HANDY, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
+    });
+    const seite = await ctx.newPage();
+    seite.on('dialog', async (d) => { await d.dismiss(); });
+    await seite.goto(`${BASE}/team`, { waitUntil: 'domcontentloaded' });
+    await sleep(5000);
+    try { await was(seite); } finally { await ctx.close(); }
+  };
+
+  /* Die Setup-Ansicht, BEVOR irgendetwas laeuft.
    *
    * Sie ist die einzige Ansicht, die der Autoplay nie zeigt, und zugleich die
    * mit der groessten Dichte an Bedienelementen und rohen Zeichen: dort waehlt
    * ein Gast Avatar, Emoji und Namen. Wer sie auslaesst, misst die halbe App.
-   * `scripts/design-audit-cozyquiz.mjs` misst umgekehrt NUR sie. */
-  if (vorBeitritt) await vorBeitritt(handy);
+   * `scripts/design-audit-cozyquiz.mjs` misst umgekehrt NUR sie.
+   *
+   * ⚠️ Zwei Anlaeufe haben sie verfehlt, jeder auf andere Weise, und beide
+   * haben trotzdem eine Datei „SETUP.png" geschrieben:
+   *   1. Das Harness-Handy traegt Teamname und Avatar im localStorage, damit
+   *      der Beitritt zuverlaessig klappt - und springt deshalb sofort in die
+   *      Lobby. Gemessen wurde die Lobby.
+   *   2. Ein frischer Gast NACH dem Start sieht „Quiz laeuft schon".
+   * Also: frischer Kontext UND vor dem Spielstart. Beides zusammen, sonst
+   * gar nicht. */
+  if (vorBeitritt) await frischerGast(vorBeitritt);
 
   /* Beitreten, und zwar bis das Handy WIRKLICH in der Lobby steht - nicht bis
    * eine Frist abgelaufen ist. Geprueft wird am Bild des Handys, weil es kein
@@ -183,8 +215,36 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
     return nachher !== vorher;
   };
 
+  /**
+   * Eine Ueberlagerung wieder schliessen.
+   *
+   * ⚠️ Escape reicht nicht. Beim ersten Lauf blieb das Menue offen und lag ab
+   * da ueber JEDER folgenden Ansicht; die Messung galt danach nur noch dem
+   * Menue, meldete aber die Phasennamen. Deshalb wird der Schliessen-Knopf
+   * gesucht und, wenn es ihn nicht gibt, neben die Ueberlagerung getippt.
+   */
+  const schliessen = async (was = 'menue') => {
+    const laenge = () => handy.evaluate(() => (document.body.innerText || '').length).catch(() => 0);
+    const vorher = await laenge();
+    await handy.keyboard.press('Escape').catch(() => {});
+    await sleep(700);
+    if (await laenge() !== vorher) return;
+    // Noch offen: denselben Knopf nochmal, er schaltet um.
+    //
+    // ⚠️ KEIN blinder Klick auf eine Koordinate. Der stand hier zuerst und hat
+    // den Lauf abgebrochen - er trifft, was gerade dort liegt, und das war
+    // nicht der Schliessen-Knopf. Ein Messwerkzeug, das die Ansicht bedient,
+    // die es messen soll, misst am Ende sich selbst.
+    const muster = was === 'menue'
+      ? 'button[aria-label*="enü" i], button[aria-label*="enu" i]'
+      : 'button[aria-label*="egeln" i], button[aria-label*="ules" i]';
+    const wahl = handy.locator(muster).first();
+    if (await wahl.count().catch(() => 0)) await wahl.click({ timeout: 2000 }).catch(() => {});
+    await sleep(900);
+  };
+
   return {
-    handy, buehne, roomCode, emit, phase, sperrseite, beigetreten, oeffnen,
+    handy, buehne, roomCode, emit, phase, sperrseite, beigetreten, oeffnen, schliessen, frischerGast,
     schliessen: async () => { await browser.close(); sock.close(); },
 
     /**
@@ -204,7 +264,15 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
           // misst man Zwischenwerte (halbe Deckkraft = andere Farbe).
           await sleep(2600);
           if (await sperrseite()) { console.log(`  – ${p} (Sperrseite, nicht gezaehlt)`); continue; }
-          await was(p);
+          try {
+            await was(p);
+          } catch (e) {
+            // ⚠️ Ein Fehler in EINER Station darf nicht den ganzen Abend
+            // beenden. Die erste Fassung liess ihn durch; der Bericht wurde
+            // trotzdem geschrieben und meldete drei Ansichten statt neun -
+            // ohne ein Wort darueber, dass sechs gefehlt haben.
+            console.log(`  ! ${p} abgebrochen: ${String(e).slice(0, 120)}`);
+          }
         }
         await sleep(1500);
       }

@@ -132,6 +132,10 @@ export type QQIconSlug =
   | 'fx-warning'           // Verbindung unterbrochen
   | 'fx-exit'
   | 'fx-help'
+  // 2026-08-29: das Ohr. Es war das einzige Zeichen auf /team, fuer das kein
+  // Motiv im Repo lag (gefunden mit scripts/handy-emoji-reste.mjs); Wolf hat
+  // es nachgereicht. Steht auf der Regelfolie bei 48 px.
+  | 'fx-ear'
   | 'fx-play'
   | 'fx-screen'            // "schau auf den Beamer"
   | 'fx-wheel'             // Gluecksrad, CozyGame-Auslosung
@@ -252,6 +256,7 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-warning':           '⚠️',
   'fx-exit':              '🚪',
   'fx-help':              '❓',
+  'fx-ear':               '👂',
   'fx-play':              '▶',
   'fx-screen':            '📺',
   'fx-wheel':             '🎡',
@@ -411,6 +416,7 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '⚠️': 'fx-warning', '⚠': 'fx-warning',
   '🚪': 'fx-exit',
   '❓': 'fx-help',
+  '👂': 'fx-ear',
   '📺': 'fx-screen',
   '🎡': 'fx-wheel',
   '⚖️': 'fx-tie',   '⚖': 'fx-tie',

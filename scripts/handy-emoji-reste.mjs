@@ -131,8 +131,7 @@ await b.abendMitfahren(async (phase) => {
     if (stationen.includes(`${was.toUpperCase()}`)) continue;
     if (await b.oeffnen(was)) {
       await messen(b.handy, was.toUpperCase());
-      await b.handy.keyboard.press('Escape').catch(() => {});
-      await sleep(800);
+      await b.schliessen(was);
     }
   }
 });

@@ -242,8 +242,39 @@ qqStateUpdate.ts   buildQQStateUpdate
 
 Weil `qqRooms.ts` als Barrel bestehen bleibt, aendert sich **keine einzige
 Import-Zeile** irgendwo im Projekt. Verifikation: `tsc` gruen + `git diff`
-zeigt nur Verschiebungen. Das ist der risikoaermste grosse Schnitt, den es
-hier gibt.
+zeigt nur Verschiebungen.
+
+⚠️ **Hier stand „das ist der risikoaermste grosse Schnitt, den es hier gibt".
+Das ist so nicht richtig, gemessen 2026-08-30** mit einem Aufruf-Graphen ueber
+alle 204 Deklarationen der Datei. Die sechs vorgeschlagenen Gruppen rufen sich
+GEGENSEITIG auf, in fuenf Paaren:
+
+```
+core <-> grid        core <-> minigames      core <-> finale
+finale <-> grid      minigames <-> scoring
+```
+
+Beim Trennen entstehen also Import-Kreise. Sie sind hier vermutlich harmlos,
+und auch das ist gemessen: in `qqRooms.ts` fuehren beim Import nur ZWEI Zeilen
+ueberhaupt etwas aus (die Raum-Map in Z403 und die Build-Kennung), und beide
+haengen von nichts ab. Funktionsdeklarationen werden gehoisted, die Aufrufe
+passieren erst zur Laufzeit.
+
+Wer den Schnitt macht, entscheidet damit bewusst „Kreise sind ok" und schreibt
+die Regel, die das haelt, in jeden Dateikopf: **keine Zeile auf Modul-Ebene,
+die beim Import etwas ausfuehrt UND ein anderes Modul anfasst.** Wer das
+einfuehrt, macht aus einem harmlosen Kreis einen Absturz beim Start.
+
+**Erledigt 2026-08-30:** `buildQQStateUpdate` (214 Zeilen) liegt in
+`qqStateUpdate.ts`, qqRooms.ts 7599 -> 7390. Ausgerechnet die Funktion, weil
+sie das einzige BLATT der Datei ist: niemand dort ruft sie auf, sie selbst
+ruft nur zwei Helfer. Dieser eine Schnitt ist beweisbar folgenlos, nicht nur
+wahrscheinlich. Der Rest steht noch aus und braucht die Entscheidung oben.
+
+⚠️ Und der Anlass fehlt bisher. Abschnitt 3 sagt: nur da schneiden, wo real
+regelmaessig gearbeitet wird. Solange niemand in qqRooms.ts arbeitet, macht
+der Schnitt die Datei uebersichtlicher, aber nicht kleiner. 2a (Legacy aus
+server.ts) bringt mehr und sollte vorher kommen.
 
 **2c. Gleiches Muster fuer `qqSocketHandlers.ts` (3.729) und
 `QQModeratorPage.tsx` (6.188 → Panels je Bereich).** Nur machen, wenn Wolf
@@ -268,10 +299,16 @@ anfasst, laesst einen Test zurueck.
 1. ~~**Stufe 0**~~ ✅ erledigt 2026-07-31.
 2. **Stufe 1b** (Schatten-State), weil rein mechanisch und sofort spuerbar.
 3. **Stufe 1a** (Event-Vertrag) fuer die ~20 heissen Events.
-4. **R5-Backlog**: die 41 bedingten Hooks, angefangen bei
-   `CozyQuizQuestionView` (24 Stellen) und `QQBeamerPage:2610`. Einzeln,
-   jeweils am echten Beamer gegengeprueft. Danach
-   `react-hooks/rules-of-hooks` in `eslint.config.mjs` auf `error` ziehen.
+4. **R5-Backlog**: die bedingten Hooks. `CozyQuizQuestionView` ist
+   ✅ erledigt 2026-08-30 (29 Meldungen -> 0, Wache aussen, Arbeit innen).
+   Offen sind noch 31, davon 15 in `QQBeamerPage`, 6 in `QQProgressTree`,
+   4 in `CozyQuizFinalRevealView`. Einzeln, jeweils am echten Beamer
+   gegengeprueft. Danach `react-hooks/rules-of-hooks` in `eslint.config.mjs`
+   auf `error` ziehen.
+   ⚠️ Der Grund dafuer ist Aufraeumen, nicht Absturzgefahr: ein Ausstieg VOR
+   jedem Hook loest Reacts Pruefung gar nicht aus (2 Hooks auf 1 meldet, 2 auf
+   0 nicht, am 30.08. im Browser gegengemessen). Wer das als Bugfix verkauft,
+   verkauft etwas Falsches.
 5. **Stufe 2a** (Legacy raus) mit Mess-Show dazwischen.
 6. **Stufe 2b** (qqRooms-Split), wenn 1 bis 5 stehen.
 7. Stufe 1a Rest + 2c nach Bedarf.

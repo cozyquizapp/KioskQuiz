@@ -828,14 +828,28 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-**Zwei Nebenbefunde beim Fragefolie-Umbau (2026-08-30), beide gemessen:**
-- 🐛 **`QQQuestionTestPage` ist verwaist.** `App.tsx` schickt `/question-test`
-      per `<Navigate>` auf `/moderator-test`, die Seite rendert also nirgends.
-      `docs/UEBERGABE_FRAGEFOLIE.md` führt sie als lebende Aufrufstelle der
-      Fragefolie, und `scripts/shot-question-arena.mjs` fährt genau diese tote
-      Route an: es knipst seit dem Umleiten das Steuerpult, nicht die Folie.
-      Entweder Route zurück oder Seite und Werkzeug raus. Das ist eine
-      Entscheidung, keine Aufräumarbeit.
+**🎨 Folien selbst gestalten können, ohne einen Agenten zu fragen (Wolf
+2026-08-30).** Beim Aufräumen kam der alte Folien-Editor hoch
+(`QQSlideEditorPage`, 2528 Zeilen). Wolf dazu: „er ist uralt und kann weg, er
+repliziert auch irgendein beamer bild was überhaupt nichts mit dem
+tatsächlichen beamer zu tun hat, das war am anfang der versuch eine art
+powerpoint programm zu bauen um nicht ki code agenten meine folien
+schrittweise überarbeiten zu lassen, sondern eine umgebung zu schaffen wo ich
+größe, übergänge, text, font, farben, background etc ändern kann".
+
+Der Code ist raus. **Der Wunsch ist es nicht**, und er steht hier, damit er
+nicht mit der Datei verschwindet: eine Umgebung, in der Wolf Größe,
+Übergänge, Text, Schrift, Farben und Hintergrund selbst stellt.
+
+⚠️ Warum der erste Versuch gescheitert ist, und das ist die Lehre für einen
+zweiten: er hat die Bühne **nachgebaut** statt sie zu benutzen. Damit lief er
+sofort auseinander, und am Ende zeigte er ein Beamerbild, das es so nie gab.
+Ein zweiter Anlauf müsste die echten Views rendern (wie es die Werkzeuge
+unter `scripts/` tun, siehe `scripts/lib/buehne.mjs`) und nur Werte daran
+verstellen. Nichts davon anfangen, ohne vorher mit Wolf über den Umfang zu
+reden: das ist ein Produktstück, kein Aufräumen.
+
+**Ein Nebenbefund beim Fragefolie-Umbau (2026-08-30), gemessen:**
 - 📝 **Die Übergabe nennt einen Absturz, den es nicht gibt.** Dort steht, eine
       Aufrufstelle ohne `key` liefere „Rendered fewer hooks than expected". Am
       30.08. im Browser mit zwei Proben gegengemessen: 2 Hooks auf 1 Hook meldet

@@ -828,6 +828,36 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
+**🪝 Die restlichen bedingten Hooks: gemessen, und der Befund entwarnt
+(2026-08-30).** Es sind **29, nicht 31** (zwei sassen in Dateien, die beim
+Aufräumen weggefallen sind). Verteilung: QQBeamerPage 15, QQProgressTree 6,
+CozyQuizFinalRevealView 4, CozyGameView 2, CozyQuizTeamQuestionCard 2.
+
+Vier davon haben die WIRKLICH gefährliche Form (erst Hooks, dann der
+Ausstieg, dann weitere Hooks) statt der harmlosen der Fragefolie:
+`QQProgressTree` (Z114/117), `CozyQuizTeamQuestionCard` (Z219-229/231, das
+Handy!), `HotPotatoSemicircle` (Z2849-2874/2876), `RaceFinalSlide`.
+
+⚠️ **Trotzdem ist keiner davon auslösbar, und das ist gemessen, nicht
+gehofft:**
+* `currentQuestion` wird nur in `qqResetRoom` auf null gesetzt, und dabei
+  springt die Phase auf LOBBY. Die Handy-Karte rendert aber nur in
+  QUESTION_ACTIVE/QUESTION_REVEAL, verschwindet also, statt leer zu rendern.
+* `room.questions` wird nur bei der Raumanlage geleert, der Spielplan kann
+  also nie mitten im Abend leer werden.
+* Die Kartoffel: `scripts/kartoffel-letztes-team.mjs` stellt den Fall her
+  (alle Teams eliminiert, `aktiv: NULL`) und meldet null Fehler. Der Server
+  beendet die Runde, die Frage wechselt, die Ansicht wird neu montiert.
+* `RaceFinalSlide` ist als DEPRECATED markiert und wird nirgends gerendert.
+
+**Damit ist auch das hier Aufräumen und kein Bugfix**, genau wie bei der
+Fragefolie. Priorität niedrig. Wer es macht: die Sicherheit liegt jeweils im
+Ablauf ringsum, nicht in der Komponente. Wer den Ablauf ändert, verliert sie
+lautlos, und die Lint-Regel kann das nicht sehen.
+
+⚠️ Nebenbefund: `RaceFinalSlide` ist toter Code INNERHALB einer lebenden
+Datei. `scripts/toter-code.mjs` misst auf Dateiebene und sieht so etwas nicht.
+
 **🎨 Folien selbst gestalten können, ohne einen Agenten zu fragen (Wolf
 2026-08-30).** Beim Aufräumen kam der alte Folien-Editor hoch
 (`QQSlideEditorPage`, 2528 Zeilen). Wolf dazu: „er ist uralt und kann weg, er

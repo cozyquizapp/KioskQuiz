@@ -16,7 +16,7 @@ import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqTurmRennplan , qqBetSlotPlan } from '../../../shared/qqFinalReveal';
 import { qqTurmBeatDauer, qqTurmAwardBeatDauer, qqTurmRennBeatDauer } from '../components/CozyQuizTowerFinaleV2';
 import { qqFinalSortedTeams } from '../utils/qqFinalScore';
-import { qqBuildKurz } from '../qqBuild';
+import { qqBuildKurz, QQ_BUILD } from '../qqBuild';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -2389,6 +2389,22 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             <span className="qm-dot" />
             {connected ? 'Verbunden' : 'Getrennt'}
           </span>
+          {/* ⚠️ 2026-08-29: die Kennung stand bisher NUR in der Final-Aufloesung
+              (weiter unten, `s.phase === 'FINAL_REVEAL'`) - also einmal pro
+              Abend, ganz am Schluss. Gebaut wurde sie am 25.08. genau fuer die
+              Frage „laeuft mein Push ueberhaupt?" (Wolf: „das problem besteht
+              seit 10 pushes"), und heute stand dieselbe Frage wieder im Raum
+              („ist die neue summary noch gar nicht gepusht?") - nur konnte man
+              die Antwort in der Lobby nicht ablesen.
+              Eine Anzeige, die man erst am Ende des Abends sieht, beantwortet
+              die Frage nicht, die man am Anfang hat. Jetzt steht sie immer da,
+              leise, neben dem Verbindungspunkt.
+              Die Server-Kennung bleibt unten: sie kommt aus dem Zustand und ist
+              vor dem Spiel nicht immer gefuellt. */}
+          <span
+            title={`Diese Seite wurde aus Commit ${QQ_BUILD.sha} gebaut${QQ_BUILD.zeit ? ` (${new Date(QQ_BUILD.zeit).toLocaleString('de-DE')})` : ''}. Steht hier eine alte Kennung, haelt der Browser oder das CDN eine alte Fassung fest.`}
+            style={{ fontSize: 10, opacity: 0.45, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.02em' }}
+          >{qqBuildKurz()}</span>
         </div>
       </div>
 

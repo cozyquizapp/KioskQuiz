@@ -828,6 +828,22 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
+**Zwei Nebenbefunde beim Fragefolie-Umbau (2026-08-30), beide gemessen:**
+- 🐛 **`QQQuestionTestPage` ist verwaist.** `App.tsx` schickt `/question-test`
+      per `<Navigate>` auf `/moderator-test`, die Seite rendert also nirgends.
+      `docs/UEBERGABE_FRAGEFOLIE.md` führt sie als lebende Aufrufstelle der
+      Fragefolie, und `scripts/shot-question-arena.mjs` fährt genau diese tote
+      Route an: es knipst seit dem Umleiten das Steuerpult, nicht die Folie.
+      Entweder Route zurück oder Seite und Werkzeug raus. Das ist eine
+      Entscheidung, keine Aufräumarbeit.
+- 📝 **Die Übergabe nennt einen Absturz, den es nicht gibt.** Dort steht, eine
+      Aufrufstelle ohne `key` liefere „Rendered fewer hooks than expected". Am
+      30.08. im Browser mit zwei Proben gegengemessen: 2 Hooks auf 1 Hook meldet
+      React, 2 Hooks auf 0 Hooks nicht. Die Fragefolie war die zweite Form, der
+      Ausstieg lag vor jedem Hook. Der Umbau bleibt richtig, aber er war
+      Aufräumen und kein Bugfix. Steht so auch im Kopf der Datei.
+
+
 **Moderator-View (offener Rest — Cockpit/Setup-Wizard + Back-Fix Fund 1+2 + Finale-Score-Fund 4 + SPACE-Hints
 + Runden/Frage-Pills sind durch, s. Git):**
 - ✅ **Back Fund 3 — Teil 1 GEBAUT** (2026-07-20, `0ef05fb1`). Scope nach AskUserQuestion bewusst ENG: nur

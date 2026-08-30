@@ -22,7 +22,7 @@
  * 7 externe Importer.
  */
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
-import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
+import type { QQStateUpdate, QQCategory, QQQuestion } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_PHASES_COUNT, QQ_QUESTIONS_PER_PHASE, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
@@ -165,9 +165,39 @@ const WINNER_DELAY_MS = 120;
 /** Vorlauf des Tons vor dem sichtbaren Auftritt. */
 const WINNER_SOUND_VORLAUF_MS = 60;
 
-export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
-  const q = s.currentQuestion;
+/**
+ * Die Wache vor der Fragefolie: aussen der Ausstieg, innen die Arbeit.
+ *
+ * 2026-08-30. Vorher stand `if (!q) return null` MITTEN in der Komponente, und
+ * die 29 Hooks dahinter waren damit bedingt - `react-hooks/rules-of-hooks`
+ * meldete genau das, 29 mal aus einer einzigen Zeile.
+ *
+ * ⚠️ Die Uebergabe (docs/UEBERGABE_FRAGEFOLIE.md) sagt, ohne `key` an der
+ * Aufrufstelle gaebe es den Absturz „Rendered fewer hooks than expected".
+ * Das stimmt fuer diese Form NICHT, gemessen am 30.08. im Browser mit zwei
+ * Proben nebeneinander:
+ *   2 Hooks -> 1 Hook  (Ausstieg MITTEN drin):  React meldet.
+ *   2 Hooks -> 0 Hooks (Ausstieg vor allem):    React meldet nichts.
+ * Die Fragefolie war die zweite Form - der Ausstieg lag vor `useLangFlip`,
+ * also vor jedem Hook. React prueft „zu wenige Hooks" erst, wenn ueberhaupt
+ * einer gerendert hat. Ein Lauf mit ausgehaengter Frage bei gleichem Key
+ * brachte weder vorher noch nachher eine Meldung.
+ *
+ * Der Umbau ist deshalb Aufraeumen, kein Bugfix: die Bedingung verschwindet
+ * aus der Hook-Reihenfolge, statt sich auf den `key` der Aufrufstelle zu
+ * verlassen (QQBeamerPage, QQBuiltinSlide), und die Regel kann wieder lesen,
+ * was da steht.
+ *
+ * ⚠️ Kein Verhalten geaendert. Der Rumpf ist unveraendert gewandert, `q` kommt
+ * als Eigenschaft statt aus `s`.
+ */
+export function QuestionView(props: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
+  const q = props.state.currentQuestion;
   if (!q) return null;
+  return <FrageFolie {...props} frage={q} />;
+}
+
+function FrageFolie({ state: s, revealed, hideCutouts, frage: q }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean; frage: QQQuestion }) {
   // Cozy Quirks (eckige Kachel): keine runde gruene „geantwortet"-Umrandung. Der
   // Status bleibt via Dimmen/Graustufe sichtbar (nicht farb-/rund-abhaengig).
   const quirkSet = isQuirkTileSet(s.avatarSetId);

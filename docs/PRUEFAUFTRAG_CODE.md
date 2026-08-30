@@ -85,6 +85,45 @@ Fund zeigen kann, nenne den Aufruf.
   blockieren nichts.
 * **Keine Architektur-Vorschläge.** Der Umbauplan steht in
   `STRUKTUR_PLAN.md` und ist nicht Gegenstand dieser Prüfung.
+* **Nichts melden, was der Abend nie erreicht.** Rund 10 % der Quellzeilen
+  hängen an keinem Einstieg. Das ist kein Suchbereich, sondern Rauschen. Der
+  nächste Abschnitt sagt, wie du die Liste bekommst.
+
+## Vor dem ersten Durchgang: die tote Hälfte ausblenden
+
+```bash
+node scripts/toter-code.mjs --selbsttest   # muss 3/3 sagen
+node scripts/toter-code.mjs                # die Liste
+```
+
+**Führe das aus, bevor du mit Durchgang 1 anfängst.** Stand 2026-08-30:
+**74 Dateien, 14.685 Zeilen, 10,3 %** der Quellzeilen sind von keinem Einstieg
+aus erreichbar. Sie haben `catch {}` und `emit('qq:...')` wie jede andere
+Datei, sie linten wie jede andere Datei, und sie rendern nie.
+
+Wenn du sie mitsuchst, passiert zweierlei. Du verbrennst Zeit an Code, den
+niemand sieht. Und schlimmer: du meldest Funde, für die es die geforderte
+Reproduktion gar nicht geben kann, und schreibst brav „nicht reproduziert"
+darunter. Dann liegt bei Wolf ein Fund, der weder falsch noch echt ist, und
+jemand muss pro Eintrag von Hand nachsehen, ob die Datei überhaupt lebt.
+
+Das ist kein erfundenes Risiko. Am 2026-08-30 hat eine Sitzung ein Repro in
+`QQQuestionTestPage` gebaut und erst danach gemerkt, dass die Route seit einer
+Weile eine Weiterleitung auf `/moderator-test` ist. Beim selben Anlass kam
+heraus, dass `docs/UEBERGABE_FRAGEFOLIE.md` vier Aufrufstellen der Fragefolie
+nennt, von denen nur zwei erreichbar sind: `QQBuiltinSlide` und
+`QQQuestionTestPage` sind tot. Eine Übergabe, die sorgfältig aussah, hat also
+über die Hälfte ihrer eigenen Belege aus totem Code gezogen.
+
+Das Werkzeug läuft über die Import-Kanten, nicht über Namen, und liefert zwei
+Stufen: **Stufe 1** wird von niemandem importiert, **Stufe 2** nur von Dateien
+der Stufe 1 oder 2. Was es nicht sieht, steht in seinem Kopf; lies das mit.
+Der Selbsttest muss 3/3 sagen, sonst bedeutet die Liste nichts.
+
+⚠️ **Erreichbar heißt nicht benutzt, und tot heißt nicht wertlos.** Die Liste
+ist eine Entscheidungsvorlage für Wolf, kein Löschbefehl und kein Fund. Melde
+sie nicht als Ergebnis, lösche nichts, und schlage auch kein Aufräumen vor.
+Sie steht hier nur, damit du deinen Suchbereich kennst.
 
 ## Was hier Absicht ist und trotzdem komisch aussieht
 

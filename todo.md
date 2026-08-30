@@ -1250,7 +1250,7 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       der Kategorie ist seit jeher ein Stapel Chips - der neue Name passt zum
       Bild, der alte tat es nicht.
 
-- [ ] **Standarddesign und die neuen Fraktions-Avatare zum Default machen.**
+- [x] **Standarddesign und die neuen Fraktions-Avatare zum Default machen.**
       ⚠️ TEIL 1 IST DRIN, BRAUCHT ABER EINEN COOLIFY-REDEPLOY (2026-08-28):
       der Server hatte zwei Vorgaben fuer dasselbe. Raumanlage setzt 'buehne',
       die drei State-Builder fielen auf 'cozy' zurueck. Ein gespeicherter Raum
@@ -1258,20 +1258,18 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       behoben, dann gegengemessen. Jetzt faellt alles auf
       QQ_DEFAULT_THEME_ID zurueck. Bis zum Redeploy laeuft am Server die alte
       Fassung.
-      Offen bleibt der Rest:
-      Wolf 2026-08-28: „das design, dass du gerade einbaust soll default
-      werden, so wie auch die neuen fraktion team avatare".
-      Teilweise schon da: `themeIdForState` liefert ohne gesetztes Design
-      bereits 'buehne', und seit heute setzen beide Format-Wege es
-      ausdruecklich. Offen ist der Rest der Kette, und der gehoert
-      zusammen geprueft statt einzeln geraten:
-      * Raum-Vorgabe im Backend (`qqRooms.ts`) - was steht dort heute?
-      * Avatar-Set: der Wizard setzt `cozyArena` fuer CrowdQuiz und
-        `cozyquiz` sonst. Sind die neuen Fraktions-Avatare in `cozyArena`
-        oder in einem eigenen Satz?
-      * Testseiten und Entwuerfe, die ihr Design hart setzen.
-      Deckt sich mit dem Langzeit-Punkt „CozyQuiz-Design zum Standard
-      machen" weiter unten - beide zusammen erledigen, nicht nacheinander.
+      ⚠️ TEIL 2 ERLEDIGT am 2026-08-29, und zwar gemessen statt gelesen. Die
+      offenen Fragen von damals sind beantwortet:
+      * Raumanlage: `themeId: 'buehne'` (qqRooms.ts), Rueckfall im Broadcast
+        ebenfalls `QQ_DEFAULT_THEME_ID` = 'buehne'.
+      * Avatar-Satz haengt am FORMAT: `qqDefaultAvatarSetId` gibt CrowdQuiz die
+        Wappen (`cozyArena`) und CozyQuiz die Objekte (`cozyquiz`). Die
+        Fraktions-Avatare sind also in `cozyArena`, kein eigener Satz.
+      * Der Wizard setzt es fuer beide Formate ausdruecklich.
+      Gegengeprueft am Ergebnis - dem Akzent-Token der laufenden Seite - in
+      vier Kombinationen (Beamer und /team, beide Formate), alle vier gruen:
+      `node scripts/design-standard-probe.mjs`. Der Punkt „CozyQuiz-Design zum
+      Standard machen" weiter unten ist damit derselbe und ebenfalls zu.
 
 ---
 
@@ -1280,9 +1278,26 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
 Explizit als „LONGTIME TO DOS fuer spaeter" angesagt, also nicht in diesem
 Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
 
-- [ ] **Summary anschauen und anpassen.** Die Seite hinter dem QR-Code der
-      Danke-Folie. Sie ist das einzige Stueck CozyQuiz, das die Gaeste am
-      naechsten Tag noch sehen, und war beim Buehnen-Durchgang nicht dabei.
+- [x] **Summary anschauen und anpassen.** Erledigt am 2026-08-29 (Wolf:
+      „kannst du die summary page auch im neuen design erstellen? die sieht oll
+      aus", dann „optimiere die seite, mach untermenues, mach die seite
+      satisfying"). Neun Commits, `a607ba1a` bis `1b7c9dec`.
+      Was dabei herauskam, kurz:
+      * Die Seite KONNTE das Design laengst - der Memo hat nur nie
+        umgeschaltet. Dabei kam ein Kontrastfehler heraus: Punktezahl weiss auf
+        creme, gemessen 1,18:1. Ursache war eine ungeschriebene Annahme („der
+        Akzent ist dunkel"); jede Design-Beschreibung beantwortet die Frage
+        jetzt selbst (`accentInk`).
+      * Das Endbrett zeigte den Avatar-SLUG als Text („teapot",
+        „crystal-ball") und lief dadurch 10 px quer. Seit dem 22.08. an JEDEM
+        Abend - unentdeckt, weil die Vorschau Tiere zeigte, die es nirgends
+        mehr gibt.
+      * Aus dem Sprungmenue wurde ein Register: 3088 -> 1843 px, Feedback von
+        Schirm 2,4 auf 1,1.
+      * Der Summary-Knopf auf dem Handy zeigte auf „juengstes Spiel im Raum".
+        ⚠️ NUR GELESEN, nicht gesehen - siehe den offenen Punkt unten.
+      Werkzeuge dazu: `summary-knipsen.mjs` (beide Ansichten, beide Formate),
+      `summary-kontrast.mjs` (jede Textstelle gegen ihren echten Grund).
 - [ ] **Rohe Unicode-Emojis auf der Buehne.** Wolf 2026-08-28: „einige der
       emojis in crowdquiz sind alt, die kompletten emojis in cozyquiz wurden
       auf ein neues design umgestellt". Gemessen mit dem neuen
@@ -1290,18 +1305,88 @@ Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
       vermutet: genau ein CrowdQuiz-eigener Rest (`👥` in der Lobby, „Ein
       Handy pro Gruppe"), dazu `🏆` im Zwischenstand - das haben beide
       Formate. Die Folien-Ueberschriften laufen laengst ueber `QQEmojiIcon`.
-      ⚠️ Nur vier von zehn Stationen gemessen. Vor dem Fix den vollen Lauf
-      fahren: `node scripts/emoji-reste.mjs`.
+      ⚠️ ERLEDIGT am 2026-08-29. Der volle Lauf ueber alle zwanzig Stationen
+      ist sauber. Fuer die HANDY-Seiten hat Wolf ausdruecklich entschieden, die
+      rohen Zeichen zu LASSEN: „ich wuerde alle auf der summary lassen, sonst
+      ist die haelfte neu die andere nicht." Der Grund der Regel ist die
+      Projektion; auf dem Handy des Gastes ist das native Zeichen umgekehrt das
+      konsistente. Ausfuehrlich im Kopf von `scripts/emoji-reste.mjs`, das die
+      Handy-Seiten deshalb absichtlich nicht ansieht.
 
 - [x] **Teamview an das Beamerdesign angleichen.** Erledigt, Wolf am
       2026-08-29: „teamview und cozywolf.de kannst du abhaken". Gebaut hat es
       die parallele Handy-Sitzung auf ihrem eigenen Branch, nicht diese hier.
       Die Abmachung dazu steht in `docs/UEBERGABE_TEAM.md`.
-- [ ] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Heute
-      entscheidet `themeIdForState` ueber den Avatarsatz, ob die Buehne
-      laeuft. Das ist ein Nebeneffekt, keine Entscheidung.
+- [x] **CozyQuiz-Design zum Standard machen.** Erledigt und gemessen am
+      2026-08-29 (Wolf: „der schlichte modus ist in beamer cozy und crowd
+      default (und dann automatisch in /team auch)"). Nicht nachgelesen,
+      sondern am Ergebnis geprueft: das Akzent-Token der laufenden Seite.
+      Buehne fuehrt Creme (#F5ECD8), Cozy fuehrt Pink - zwei Werte, kein
+      Auslegungsspielraum. Vier von vier gruen (Beamer und /team, beide
+      Formate). Nachfahrbar mit `node scripts/design-standard-probe.mjs`.
+      ⚠️ Bewusste Ausnahme: ein Raum, der seit vor dem 24.08. auf Platte liegt,
+      behaelt sein altes `themeId`. Wer damals „Cozy" gewaehlt hat, soll es
+      behalten. Fuer CrowdQuiz gibt es eine Nachziehung im Steuerpult (nur wenn
+      das Kolosseum nicht ausdruecklich gewaehlt wurde); fuer CozyQuiz fehlt
+      ein Marker, an dem sich Wahl von Altlast unterscheiden liesse - deshalb
+      bleibt es dort stehen, statt zu raten.
 - [x] **cozywolf.de-Landing an das neue Design anpassen.** Erledigt, Wolf am
       2026-08-28: „landing kannst du abhacken ist fertig".
+
+---
+
+## Neu am 2026-08-29, aus der Summary-Runde
+
+- [ ] **Der Summary-Link auf dem Handy ist GELESEN, nicht gesehen.** Der Knopf
+      auf der Danke-Karte zeigte auf `/summary/{roomCode}` - „juengstes Spiel
+      in diesem Raum". Wer sich den Link merkt oder ihn weiterschickt, sah den
+      naechsten Abend desselben Raums. Auf dem Beamer war genau das am
+      2026-05-10 repariert worden, das Handy hat die Reparatur nie bekommen.
+      Jetzt dieselbe Zeile (`/summary/by-id/{id}`) samt Rueckfallebene.
+      ⚠️ Ein roter Lauf war nicht zu haben: `lastGameResultId` wird erst beim
+      Speichern gesetzt. Zu pruefen ist es am naechsten echten Abend, und zwar
+      von Hand: auf dem Handy den Knopf antippen und schauen, ob die Adresse
+      `/summary/by-id/...` lautet.
+
+- [ ] **Teilen verschickt Text, kein Bild.** `navigator.share` mit Titel, einer
+      Zeile und der Adresse. Wolf 2026-08-29 zur Summary: „die summary ist
+      super wichtig fuer feedback und werbung (teilen einer nicen
+      zusammenfassung button)". Eine erzeugte Bildkarte waere der groesste
+      verbliebene Hebel auf das Werbeziel - Wolfs spaetere Idee mit dem
+      Teamfoto im Rahmen setzt darauf auf. ENTSCHEIDUNG STEHT AUS.
+
+- [ ] **Die Summary kommt nicht von selbst.** Auf dem Team-Handy steht am Ende
+      ein Knopf, kein Wechsel. Wolf hatte danach gefragt („nach dem quiz auf
+      team handys automatisch kommt"); technisch ginge beides.
+      ENTSCHEIDUNG STEHT AUS.
+
+- [ ] **Gewinnspiel: Verlosung unter denen, die Feedback geben.** Wolf
+      2026-08-29: „ich will eigentlich ein gewinnspiel machen spaeter fuer die
+      die mir feedback geben (geht erst nach paar events) mit random auslosung
+      fuer merch", dazu „das ist ein long time to do".
+      Da: das Kontaktfeld wird gespeichert (`contact` in QQFeedbackEntry), dazu
+      `submittedAt` und `roomCode`.
+      ⚠️ Fehlt, und der erste Punkt ist kein Nebenpunkt: das Kontaktfeld ist
+      heute fuer RUECKFRAGEN gedacht (`contactIntent`: date/booking/response).
+      Wer es ausfuellt, hat NICHT in eine Verlosung eingewilligt. Es braucht
+      eine eigene, angehakte Zeile samt Teilnahmebedingungen und eine
+      Aufbewahrungsfrist. Erst danach die Ziehung selbst (nachvollziehbar:
+      Zeitraum, Lose, gezogene Id) und die Behandlung doppelter Eintraege.
+      Reihenfolge: Einwilligung zuerst. Wer die Ziehung zuerst baut, sammelt in
+      der Zwischenzeit Daten ohne Grundlage.
+
+- [ ] **Zwei globale Regeln in `main.css` schlagen auf dem Handy JEDEN
+      Inline-Style.** Am 2026-08-29 zweimal teuer bezahlt, beide Male beim
+      Bau des Summary-Untermenues:
+      * `[style*="display: flex"] { flex-wrap: wrap !important }`
+      * `button { padding: 10px 14px !important; font-size: 14px !important;
+        min-height: 40px !important }`
+      Ein `!important` im Stilblatt schlaegt einen Inline-Style. Wer Layout
+      baut und sich wundert, warum ein Wert nicht wirkt, sucht sonst im
+      eigenen Code. Beide Stellen sind in QQSummaryPage kommentiert.
+      `main.css` gehoert der Team-Sitzung (docs/UEBERGABE_TEAM.md), deshalb
+      dort nichts aendern ohne Ansage - hier steht es nur, damit es niemanden
+      ein drittes Mal kostet.
 
 ---
 

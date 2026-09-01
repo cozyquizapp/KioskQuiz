@@ -1,7 +1,7 @@
 import cors from 'cors';
 import express from 'express';
 import http from 'http';
-import { Server as SocketIOServer, Socket } from 'socket.io';
+import { Server as SocketIOServer } from 'socket.io';
 import { v4 as uuid } from 'uuid';
 import multer from 'multer';
 import path from 'path';
@@ -26,28 +26,15 @@ Sentry.init({
 const cache = new NodeCache({ stdTTL: 600, checkperiod: 120 });
 // Studio/Bingo/Builder-Reste entfernt
 import {
-  validateTeamName,
-  validateAnswer,
-  validateQuizId,
-  validateRoomCode,
-  validateLanguage,
-  validateQuestionId,
-  validateNumber,
-  validateTeamId
-} from './validation';
-import {
   AnyQuestion,
   AnswerEntry,
   AnswerTieBreaker,
   BingoBoard,
   QuestionPhase,
-  QuizCategory,
   QuizTemplate,
   ScreenState,
-  SlotTransitionMeta,
   Team,
   TeamStatusSnapshot,
-  SyncStatePayload,
   StateUpdatePayload,
   BlitzState,
   BlitzPhase,
@@ -59,28 +46,15 @@ import {
   RundlaufAttempt,
   RundlaufConfig,
   QuizBlitzTheme,
-  QuizBlitzItem,
-  CozyQuestionType,
-  BunteTueteSubmission,
-  BunteTueteTop5Submission,
-  BunteTuetePrecisionSubmission,
-  BunteTueteOneOfEightSubmission,
-  BunteTueteOrderSubmission,
-  BunteTueteMapSubmission,
   BunteTuetePayload,
   CozyQuizDraft,
   NextStageHint,
   CozyQuizMeta,
   CozyQuestionSlotTemplate,
-  LobbyStats,
-  FastestAnswer,
-  FunnyAnswer,
-  CommonWrongAnswer,
   EstimateQuestion,
   MultipleChoiceQuestion,
   TrueFalseQuestion,
   ImageQuestion,
-  SortItemsQuestion,
   BettingQuestion
 } from '../../shared/quizTypes';
 import { COZY_SLOT_TEMPLATE } from '../../shared/cozyTemplate';
@@ -97,36 +71,21 @@ import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName,
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
-  BLITZ_CATEGORY_SHOWCASE_MS,
-  BLITZ_ROUND_INTRO_MS,
   DEBUG,
-  DEFAULT_QUESTION_TIME,
-  QUESTION_INTRO_MS,
   ROOM_IDLE_CLEANUP_MS,
-  SLOT_DURATION_MS
 } from './constants';
 import { INTRO_SLIDES } from './config/introSlides';
 import {
   applyGameAction,
-  INITIAL_GAME_STATE,
   CozyGameState,
-  isQuestionInputOpen,
   GameStateAction
 } from './game/stateMachine';
 import { connectDB, isDBConnected, getMongoEnvSource } from './db/mongo';
 import { 
-  Question,
-  getQuestionsFromDB, 
   getCustomQuestionsFromDB, 
-  saveQuestionToDB, 
-  deleteQuestionFromDB, 
-  bulkUploadQuestionsToDB,
   initializeDefaultQuestions,
-  CozyQuizDraftModel,
   getCozyDraftFromDB,
-  getAllCozyDraftsFromDB,
   saveCozyDraftToDB,
-  deleteCozyDraftFromDB,
   getAllQQDraftsFromDB,
   getQQDraftFromDB,
   saveQQDraftToDB,
@@ -270,7 +229,6 @@ if (isCloudinaryEnabled) {
 // static files for uploads
 const uploadRoot = path.join(__dirname, '..', '..', 'uploads');
 const uploadDir = path.join(uploadRoot, 'questions');
-const blitzUploadDir = path.join(uploadRoot, 'blitz');
 
 // Healthcheck / Room-Check
 // ── Welche Fassung laeuft auf diesem Server? ────────────────────────────────
@@ -350,16 +308,6 @@ app.post('/api/translate', async (req, res) => {
   }
 });
 
-app.get('/api/rooms/:roomCode', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  return res.json({
-    ok: true,
-    room: roomCode,
-    teams: Object.values(room.teams).length,
-    hasQuestion: Boolean(room.currentQuestionId)
-  });
-});
 
 app.use('/uploads', express.static(uploadRoot));
 
@@ -374,13 +322,6 @@ try {
 } catch {
   questionUsageMap = {};
 }
-const persistQuestionUsage = () => {
-  try {
-    fs.writeFileSync(usagePath, JSON.stringify(questionUsageMap, null, 2), 'utf-8');
-  } catch {
-    // ignore
-  }
-};
 
 const upload = multer({
   storage: multer.diskStorage({
@@ -394,24 +335,6 @@ const upload = multer({
   }
 });
 
-const blitzUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => {
-      try {
-        if (!fs.existsSync(blitzUploadDir)) fs.mkdirSync(blitzUploadDir, { recursive: true });
-      } catch {
-        // ignore mkdir errors
-      }
-      cb(null, blitzUploadDir);
-    },
-    filename: (_req, file, cb) => cb(null, `${uuid()}${path.extname(file.originalname)}`)
-  }),
-  limits: { fileSize: 2 * 1024 * 1024 },
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) cb(null, true);
-    else cb(new Error('Nur Bildformate erlaubt'));
-  }
-});
 
 const audioUploadDir = path.join(uploadRoot, 'audio');
 const audioUpload = multer({
@@ -600,13 +523,6 @@ try {
 } catch {
   quizLayoutMap = {};
 }
-const persistQuizLayouts = () => {
-  try {
-    fs.writeFileSync(quizLayoutPath, JSON.stringify(quizLayoutMap, null, 2), 'utf-8');
-  } catch {
-    // ignore
-  }
-};
 
 // stats / leaderboard (minimal)
 const statsPath = path.join(__dirname, 'data', 'quizStats.json');
@@ -640,31 +556,7 @@ const persistStats = () => {
 };
 
 // --- Quiz Layout Endpoints --------------------------------------------------
-app.get('/api/quizzes/:quizId/layout', (req, res) => {
-  const { quizId } = req.params;
-  const cacheKey = `quizLayout_${quizId}`;
-  const cached = cache.get(cacheKey);
-  if (cached) {
-    return res.json({ layout: cached });
-  }
-  const layout = quizLayoutMap[quizId] || null;
-  cache.set(cacheKey, layout);
-  res.json({ layout });
-});
 
-app.post('/api/quizzes/:quizId/layout', requirePin, (req, res) => {
-  const { quizId } = req.params;
-  const payload = req.body as QuizLayout;
-  quizLayoutMap[quizId] = {
-    backgrounds: payload.backgrounds,
-    includeIntroOutro: payload.includeIntroOutro,
-    includeRuleSlides: payload.includeRuleSlides,
-    overrides: payload.overrides
-  };
-  persistQuizLayouts();
-  cache.del(`quizLayout_${quizId}`);
-  res.json({ ok: true, layout: quizLayoutMap[quizId] });
-});
 
 // Published quizzes (playable)
 const publishedQuizzesPath = path.join(__dirname, 'data', 'publishedQuizzes.json');
@@ -709,105 +601,19 @@ publishedQuizzes.forEach((q) => {
     enableBingo: q.enableBingo ?? false
   });
 });
-const persistPublished = () => {
-  try {
-    fs.writeFileSync(publishedQuizzesPath, JSON.stringify(publishedQuizzes, null, 2), 'utf-8');
-  } catch {
-    // ignore
-  }
-};
 
-const upsertPublishedQuiz = (payload: PublishedQuiz) => {
-  const stored: PublishedQuiz = {
-    ...payload,
-    meta: payload.meta ?? (payload.language ? { language: payload.language as Language } : null),
-    language: payload.language ?? payload.meta?.language
-  };
-  const idx = publishedQuizzes.findIndex((q) => q.id === stored.id);
-  if (idx >= 0) publishedQuizzes[idx] = stored;
-  else publishedQuizzes.push(stored);
 
-  const meta: QuizMeta =
-    stored.meta && typeof stored.meta === 'object'
-      ? { ...stored.meta }
-      : stored.language
-      ? { language: stored.language as Language }
-      : {};
-  if (!meta.language && stored.language) {
-    meta.language = stored.language as Language;
-  }
 
-  quizzes.set(stored.id, {
-    id: stored.id,
-    name: stored.name,
-    mode: 'ordered',
-    questionIds: stored.questionIds,
-    meta,
-    blitz: stored.blitz ?? null,
-    rundlauf: stored.rundlauf ?? null,
-    enableBingo: stored.enableBingo ?? false
-  });
-
-  if (stored.layout || stored.theme) {
-    quizLayoutMap[stored.id] = { overrides: { layout: stored.layout, theme: stored.theme } };
-    persistQuizLayouts();
-  }
-  persistPublished();
-  return stored;
-};
-
-app.get('/api/quizzes/published', (_req, res) => {
-  const cacheKey = 'publishedQuizzes';
-  const cached = cache.get(cacheKey);
-  if (cached) {
-    return res.json({ quizzes: cached });
-  }
-  cache.set(cacheKey, publishedQuizzes);
-  res.json({ quizzes: publishedQuizzes });
-});
-
-app.post('/api/quizzes/publish', requirePin, (req, res) => {
-  const payload = req.body as PublishedQuiz;
-  if (!payload?.id || !payload?.name || !Array.isArray(payload.questionIds)) {
-    return res.status(400).json({ error: 'id, name, questionIds erforderlich' });
-  }
-  const stored = upsertPublishedQuiz(payload);
-  cache.del('publishedQuizzes');
-  res.json({ ok: true, quiz: stored });
-});
 
 const BLITZ_SETS = 3;
 const BLITZ_ITEMS_PER_SET = 5;
 const BLITZ_DISPLAY_TIME_MS = 30000; // Image display phase
 const BLITZ_ANSWER_TIME_MS = 30000;  // Answer input phase
 const BLITZ_CATEGORY_COUNT = 9; // 3×3 grid: 2 bans + 1 pick + 2 random = 5 min, 9 gives comfortable buffer
-const BLITZ_THEME_RECOMMENDED_MIN = 9;
 const RUNDLAUF_CATEGORY_COUNT = 6; // 2 bans + 1 pick + 3 remaining (2 random) = 6
-const RUNDLAUF_TURN_TIME_MS = (() => {
-  const raw = Number(process.env.RUNDLAUF_TURN_TIME_MS ?? 25000);
-  if (!Number.isFinite(raw)) return 25000;
-  return Math.max(3000, Math.floor(raw));
-})();
 const RUNDLAUF_ROUND_POINTS = 3; // TODO(RUNDLAUF): confirm points per round win
 
 
-const RUN_LOOP_CATEGORIES: RundlaufCategoryOption[] = [
-  { id: 'HAUPTSTAEDTE_AFRIKA', title: 'HAUPTSTAEDTE AFRIKA' },
-  { id: 'HAUPTSTAEDTE_EUROPA', title: 'HAUPTSTAEDTE EUROPA' },
-  { id: 'DEUTSCHE_STAEDTE', title: 'DEUTSCHE STAEDTE' },
-  { id: 'DEUTSCHE_BUNDESLAENDER', title: 'DEUTSCHE BUNDESLAENDER' },
-  { id: 'US_BUNDESSTAATEN', title: 'US BUNDESSTAATEN' },
-  { id: 'LAENDER_MIT_S', title: 'LAENDER MIT S' },
-  { id: 'DISNEY_FILME', title: 'DISNEY FILME' },
-  { id: 'AUTOMOBILMARKEN', title: 'AUTOMOBILMARKEN' },
-  { id: 'AFRIKANISCHE_SAEUGETIERE', title: 'AFRIKANISCHE SAEUGETIERE' },
-  { id: 'OLYMPISCHE_SPORTARTEN', title: 'OLYMPISCHE SPORTARTEN' },
-  { id: 'LAENDER_MIT_A', title: 'LAENDER MIT A' },
-  { id: 'FRUECHTE', title: 'FRUECHTE' },
-  { id: 'GEMUESESORTEN', title: 'GEMUESESORTEN' },
-  { id: 'EUROPAEISCHE_FLUESSE', title: 'EUROPAEISCHE FLUESSE' },
-  { id: 'MUSIKINSTRUMENTE', title: 'MUSIKINSTRUMENTE' }
-];
 
 const RUN_LOOP_DATA: Record<string, string[]> = {
   HAUPTSTAEDTE_AFRIKA: [
@@ -1227,7 +1033,6 @@ const RUN_LOOP_DATA: Record<string, string[]> = {
   ]
 };
 
-const RUNDLAUF_DEFAULT_POINTS_TIE = 1;
 
 const slugifyRundlaufId = (value: string) =>
   value
@@ -1253,22 +1058,6 @@ const normalizeRundlaufPool = (pool?: string[] | null): RundlaufCategoryOption[]
   return deduped;
 };
 
-const normalizeRundlaufConfig = (config?: RundlaufConfig | null) => {
-  const pool = normalizeRundlaufPool(config?.pool ?? null);
-  const turnDurationMs =
-    typeof config?.turnDurationMs === 'number' && Number.isFinite(config.turnDurationMs)
-      ? Math.max(3000, Math.floor(config.turnDurationMs))
-      : undefined;
-  const pointsWinner =
-    typeof config?.pointsWinner === 'number' && Number.isFinite(config.pointsWinner)
-      ? Math.max(0, Math.floor(config.pointsWinner))
-      : undefined;
-  const pointsTie =
-    typeof config?.pointsTie === 'number' && Number.isFinite(config.pointsTie)
-      ? Math.max(0, Math.floor(config.pointsTie))
-      : undefined;
-  return { pool, turnDurationMs, pointsWinner, pointsTie };
-};
 
 const sanitizeRundlaufDraft = (config?: RundlaufConfig | null): RundlaufConfig => {
   const pool = normalizeRundlaufPool(config?.pool ?? null).map((entry) => entry.title);
@@ -1299,13 +1088,6 @@ const ensureDraftDbConnection = async (): Promise<boolean> => {
 };
 
 // Initialize with default on first run
-let persistCozyDrafts = () => {
-  try {
-    fs.writeFileSync(cozyDraftsPath, JSON.stringify(cozyDrafts, null, 2), 'utf-8');
-  } catch {
-    // ignore persistence issues, builder kann erneut speichern
-  }
-};
 
 // Default demo draft when no persisted drafts exist
 const createDefaultDemoDraft = (): CozyQuizDraft => {
@@ -1699,144 +1481,12 @@ const seedRepoDraftsToDb = async (): Promise<void> => {
 // Fire-and-forget; Seeding blockt Server-Start nicht.
 seedRepoDraftsToDb().catch(err => console.warn('[seed] Fehler:', err));
 
-const createNewCozyDraft = (meta?: Partial<CozyQuizMeta>): CozyQuizDraft => {
-  const id = `cozy-draft-${uuid().slice(0, 8)}`;
-  const now = Date.now();
-  return {
-    id,
-    meta: ensureCozyMeta(meta),
-    questions: buildDefaultCozyQuestions(id),
-    blitz: { pool: buildPlaceholderBlitzPool(id) },
-    rundlauf: sanitizeRundlaufDraft({
-      pool: RUN_LOOP_CATEGORIES.map((entry) => entry.title),
-      turnDurationMs: RUNDLAUF_TURN_TIME_MS,
-      pointsWinner: RUNDLAUF_ROUND_POINTS,
-      pointsTie: RUNDLAUF_DEFAULT_POINTS_TIE
-    }),
-    enableBingo: false,
-    createdAt: now,
-    updatedAt: now,
-    status: 'draft',
-    lastPublishedAt: null
-  } as CozyQuizDraft;
-};
 
-const summarizeCozyDraft = (draft: CozyQuizDraft) => ({
-  id: draft.id,
-  title: draft.meta?.title ?? '(kein Titel)',
-  language: draft.meta?.language ?? 'de',
-  date: draft.meta?.date ?? null,
-  status: draft.status ?? 'draft',
-  updatedAt: draft.updatedAt,
-  createdAt: draft.createdAt,
-  questionCount: Array.isArray(draft.questions) ? draft.questions.length : 0,
-  blitzThemes: draft.blitz?.pool?.length ?? 0
-});
 
-const sanitizeCozyQuestions = (draftId: string, payload?: AnyQuestion[]): AnyQuestion[] => {
-  const fallback = buildDefaultCozyQuestions(draftId);
-  if (!Array.isArray(payload) || payload.length !== COZY_SLOT_TEMPLATE.length) {
-    return fallback;
-  }
-  return payload.map((entry, idx) => {
-    const fallbackQuestion = fallback[idx];
-    if (!entry || typeof entry !== 'object') return fallbackQuestion;
-    
-    // Cast to any for merge (entry might be partial/custom format)
-    const entryAny = entry as any;
-    const merged = {
-      ...fallbackQuestion,
-      ...entryAny
-    } as AnyQuestion;
-    
-    // Safe ID assignment
-    const rawId = entryAny?.id;
-    if (typeof rawId === 'string' && rawId.trim()) {
-      merged.id = rawId.trim();
-    }
-    
-    // Safe points assignment with type-check
-    const entryPoints = entryAny?.points;
-    if (typeof entryPoints === 'number') {
-      merged.points = entryPoints;
-    } else {
-      merged.points = fallbackQuestion.points;
-    }
-    
-    // Safe segment index from template
-    const template = COZY_SLOT_TEMPLATE[idx];
-    if (template && typeof template.segmentIndex === 'number') {
-      (merged as any).segmentIndex = template.segmentIndex;
-    }
-    
-    // Safe bunteTuete inheritance
-    if (!entryAny?.bunteTuete && fallbackQuestion && (fallbackQuestion as any).bunteTuete) {
-      (merged as any).bunteTuete = (fallbackQuestion as any).bunteTuete;
-    }
-    
-    return merged;
-  });
-};
 
-const sanitizeBlitzPool = (draftId: string, pool?: QuizBlitzTheme[] | null): QuizBlitzTheme[] => {
-  const fallbackPool = buildPlaceholderBlitzPool(draftId);
-  if (!Array.isArray(pool) || !pool.length) {
-    return fallbackPool;
-  }
-  return pool.map((theme, idx) => {
-    const fallback = fallbackPool[idx] || fallbackPool[idx % fallbackPool.length];
-    const baseId = typeof theme?.id === 'string' && theme.id.trim() ? theme.id.trim() : `${draftId}-blitz-${idx + 1}`;
-    const baseTitle = theme?.title?.trim() || fallback.title || `Blitz-Thema ${idx + 1}`;
-    const sourceItems = Array.isArray(theme?.items) && theme.items.length ? theme.items : fallback.items;
-    const normalizedItems: QuizBlitzItem[] = sourceItems
-      .slice(0, BLITZ_ITEMS_PER_SET)
-      .map((item, itemIdx) => ({
-        id: typeof item?.id === 'string' && item.id.trim() ? item.id.trim() : `${baseId}-${itemIdx + 1}`,
-        prompt: typeof item?.prompt === 'string' ? item.prompt : fallback.items[itemIdx]?.prompt ?? `Motiv ${itemIdx + 1}`,
-        mediaUrl: typeof item?.mediaUrl === 'string' ? item.mediaUrl : fallback.items[itemIdx]?.mediaUrl,
-        answer: typeof item?.answer === 'string' ? item.answer : '',
-        aliases: Array.isArray(item?.aliases) ? item.aliases.filter((alias): alias is string => typeof alias === 'string') : []
-      }));
-    while (normalizedItems.length < BLITZ_ITEMS_PER_SET) {
-      const fillerIdx = normalizedItems.length;
-      normalizedItems.push({
-        id: `${baseId}-${fillerIdx + 1}`,
-        prompt: `Motiv ${fillerIdx + 1}`,
-        answer: '',
-        aliases: []
-      });
-    }
-    return {
-      id: baseId,
-      title: baseTitle,
-      items: normalizedItems
-    };
-  });
-};
 
-const applyDraftUpdate = (draft: CozyQuizDraft, payload: Partial<CozyQuizDraft>): CozyQuizDraft => {
-  const metaSource = payload.meta ? { ...draft.meta, ...payload.meta } : draft.meta;
-  const updated = {
-    ...draft,
-    meta: ensureCozyMeta(metaSource),
-    questions: payload.questions ? sanitizeCozyQuestions(draft.id, payload.questions as AnyQuestion[]) : draft.questions,
-    blitz: { pool: sanitizeBlitzPool(draft.id, payload.blitz?.pool ?? draft.blitz?.pool) },
-    rundlauf: sanitizeRundlaufDraft(payload.rundlauf ?? draft.rundlauf),
-    enableBingo: payload.enableBingo ?? draft.enableBingo,
-    updatedAt: Date.now()
-  } as CozyQuizDraft;
-  return hydrateCozyDraft(updated);
-};
 
-const findCozyDraftIndex = (draftId: string) => cozyDrafts.findIndex((draft) => draft.id === draftId);
 
-const getCozyDraftOrFail = (draftId: string) => {
-  const index = findCozyDraftIndex(draftId);
-  if (index === -1) {
-    throw new Error('Draft nicht gefunden');
-  }
-  return { draft: cozyDrafts[index], index };
-};
 
 // --- Stats Endpoints (minimal) ----------------------------------------------
 type AllTimeTeamStat = { teamName: string; wins: number; games: number; totalScore: number; avgScore: number | null };
@@ -1934,263 +1584,11 @@ app.get('/api/stats/question/:questionId', (req, res) => {
 });
 
 // Cozy60 Builder API
-app.get('/api/studio/cozy60', async (_req, res) => {
-  try {
-    // Try to load from MongoDB first
-    if (await ensureDraftDbConnection()) {
-      const drafted = await getAllCozyDraftsFromDB();
-      const list = drafted.flatMap((draft) => {
-        try { return [summarizeCozyDraft(draft)]; } catch { return []; }
-      });
-      return res.json({ drafts: list });
-    }
-    if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Drafts aktuell nicht verfuegbar' });
-    }
-    
-    // Fallback to in-memory
-    const list = [...cozyDrafts]
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .map((draft) => summarizeCozyDraft(draft));
-    res.json({ drafts: list });
-  } catch (err) {
-    console.error('Fehler beim Laden von Cozy Drafts:', err);
-    if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB-Fehler beim Laden der Drafts' });
-    }
-    const list = [...cozyDrafts]
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .map((draft) => summarizeCozyDraft(draft));
-    res.json({ drafts: list });
-  }
-});
 
-app.post('/api/studio/cozy60', async (req, res) => {
-  try {
-    const meta = req.body?.meta as Partial<CozyQuizMeta> | undefined;
-    const draft = createNewCozyDraft(meta);
-    
-    // Save to MongoDB if connected
-    if (await ensureDraftDbConnection()) {
-      await saveCozyDraftToDB(draft);
-    } else if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht gespeichert werden' });
-    } else {
-      // Fallback to in-memory
-      cozyDrafts.push(draft);
-      persistCozyDrafts();
-    }
-    
-    res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
-  } catch (err) {
-    console.error('Fehler beim Erstellen von Cozy Draft:', err);
-    res.status(400).json({ error: (err as Error).message });
-  }
-});
 
-app.get('/api/studio/cozy60/:id', async (req, res) => {
-  try {
-    const draftId = req.params.id;
-    
-    // Try MongoDB first
-    if (await ensureDraftDbConnection()) {
-      const draft = await getCozyDraftFromDB(draftId);
-      if (!draft) {
-        return res.status(404).json({ error: 'Draft nicht gefunden' });
-      }
-      return res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
-    }
-    if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft aktuell nicht verfuegbar' });
-    }
-    
-    // Fallback to in-memory
-    const { draft } = getCozyDraftOrFail(draftId);
-    res.json({ draft, warnings: collectCozyDraftWarnings(draft) });
-  } catch (err) {
-    const message = (err as Error).message;
-    const status = message === 'Draft nicht gefunden' ? 404 : 400;
-    res.status(status).json({ error: message });
-  }
-});
 
-app.put('/api/studio/cozy60/:id', async (req, res) => {
-  try {
-    const draftId = req.params.id;
-    const updates = (req.body as Partial<CozyQuizDraft>) || {};
 
-    // Helper: translate newly saved/changed questions at save-time (if DEEPL_API_KEY set)
-    const translateDraftQuestions = async (draft: CozyQuizDraft, prevDraft: CozyQuizDraft | null): Promise<CozyQuizDraft> => {
-      if (!process.env.DEEPL_API_KEY || !updates.questions) return draft;
-      const prevMap = new Map<string, AnyQuestion>((prevDraft?.questions ?? []).map((q) => [q.id, q]));
-      let changed = false;
-      const translatedQuestions = await Promise.all(draft.questions.map(async (q) => {
-        const any = q as any;
-        const prev = prevMap.get(q.id) as any;
-        // Re-translate if question text changed or translations are missing/empty
-        const questionChanged = !prev || prev.question !== any.question;
-        const optionsChanged = !prev || JSON.stringify(prev.options) !== JSON.stringify(any.options);
-        const hasEmptyOptionTranslations = Array.isArray(any.options) && any.options.length > 0 &&
-          (!Array.isArray(any.optionsEn) || any.optionsEn.some((o: unknown) => !String(o ?? '').trim()));
-        const needsTranslation = !any.questionEn || questionChanged || optionsChanged || !any.optionsEn || hasEmptyOptionTranslations;
-        if (!needsTranslation) return q;
-        const translated = await autoTranslateQuestion(q);
-        if (translated !== q) changed = true;
-        return translated;
-      }));
-      if (!changed) return draft;
-      return { ...draft, questions: translatedQuestions };
-    };
 
-    if (await ensureDraftDbConnection()) {
-      const existing = await getCozyDraftFromDB(draftId);
-      if (!existing) {
-        return res.status(404).json({ error: 'Draft nicht gefunden' });
-      }
-
-      let updated = applyDraftUpdate(existing, updates);
-      updated.updatedAt = Date.now();
-      updated = await translateDraftQuestions(updated, existing);
-      await saveCozyDraftToDB(updated);
-
-      return res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
-    }
-    if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht gespeichert werden' });
-    }
-
-    // Fallback to in-memory
-    const { draft, index } = getCozyDraftOrFail(draftId);
-    let updated = applyDraftUpdate(draft, updates);
-    updated = await translateDraftQuestions(updated, draft);
-    cozyDrafts[index] = updated;
-    persistCozyDrafts();
-    res.json({ draft: updated, warnings: collectCozyDraftWarnings(updated) });
-  } catch (err) {
-    const message = (err as Error).message;
-    const status = message === 'Draft nicht gefunden' ? 404 : 400;
-    res.status(status).json({ error: message });
-  }
-});
-
-app.post('/api/studio/cozy60/:id/publish', async (req, res) => {
-  try {
-    const draftId = req.params.id;
-    const updates = (req.body?.draft || req.body?.updates) as Partial<CozyQuizDraft> | undefined;
-    
-    let draft: CozyQuizDraft;
-    let index = -1;
-    
-    if (await ensureDraftDbConnection()) {
-      const dbDraft = await getCozyDraftFromDB(draftId);
-      if (!dbDraft) {
-        return res.status(404).json({ error: 'Draft nicht gefunden' });
-      }
-      draft = dbDraft;
-    } else if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft kann nicht veroeffentlicht werden' });
-    } else {
-      const result = getCozyDraftOrFail(draftId);
-      draft = result.draft;
-      index = result.index;
-    }
-    
-    const updatedDraft = updates ? applyDraftUpdate(draft, updates) : draft;
-    const now = Date.now();
-    const finalized: CozyQuizDraft = {
-      ...updatedDraft,
-      status: 'published',
-      lastPublishedAt: now,
-      updatedAt: now
-    };
-    
-    // Save finalized draft
-    if (isDBConnected()) {
-      await saveCozyDraftToDB(finalized);
-    } else {
-      cozyDrafts[index] = finalized;
-      persistCozyDrafts();
-    }
-    
-    // Save questions and create published quiz
-    const requestedQuizId = typeof req.body?.quizId === 'string' ? req.body.quizId : undefined;
-    const quizId = buildQuizIdFromDraft(finalized, requestedQuizId);
-    finalized.questions.forEach((question) => upsertCustomQuestion(question));
-    persistCustomQuestions();
-
-    const publishedMeta: QuizMeta = {
-      description: finalized.meta.description || undefined,
-      date: finalized.meta.date ?? now,
-      language: finalized.meta.language
-    };
-
-    const publishedPayload: PublishedQuiz = {
-      id: quizId,
-      name: finalized.meta.title,
-      questionIds: finalized.questions.map((question) => question.id),
-      language: finalized.meta.language,
-      meta: publishedMeta,
-      blitz: finalized.blitz,
-      rundlauf: finalized.rundlauf ?? null,
-      enableBingo: finalized.enableBingo
-    };
-    upsertPublishedQuiz(publishedPayload);
-    
-    res.json({ ok: true, draft: finalized, quizId, warnings: collectCozyDraftWarnings(finalized) });
-  } catch (err) {
-    const message = (err as Error).message;
-    const status = message === 'Draft nicht gefunden' ? 404 : 400;
-    res.status(status).json({ error: message });
-  }
-});
-
-app.post('/api/studio/cozy60/:id/duplicate', async (req, res) => {
-  try {
-    const draftId = req.params.id;
-    let draft: CozyQuizDraft;
-    
-    if (await ensureDraftDbConnection()) {
-      const dbDraft = await getCozyDraftFromDB(draftId);
-      if (!dbDraft) {
-        return res.status(404).json({ error: 'Draft nicht gefunden' });
-      }
-      draft = dbDraft;
-    } else if (mongoUriConfigured) {
-      return res.status(503).json({ error: 'MongoDB nicht verbunden - Draft konnte nicht dupliziert werden' });
-    } else {
-      const result = getCozyDraftOrFail(draftId);
-      draft = result.draft;
-    }
-    
-    const newTitle = typeof req.body?.newTitle === 'string' ? req.body.newTitle : `${draft.meta.title} (Kopie)`;
-    
-    const newDraft: CozyQuizDraft = {
-      ...JSON.parse(JSON.stringify(draft)), // Deep clone
-      id: `cozy-draft-${uuid().slice(0, 8)}`,
-      meta: {
-        ...draft.meta,
-        title: newTitle
-      },
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      lastPublishedAt: undefined
-    };
-    
-    // Save duplicated draft
-    if (isDBConnected()) {
-      await saveCozyDraftToDB(newDraft);
-    } else {
-      cozyDrafts.push(newDraft);
-      persistCozyDrafts();
-    }
-    
-    res.json({ draft: newDraft, warnings: collectCozyDraftWarnings(newDraft) });
-  } catch (err) {
-    const message = (err as Error).message;
-    const status = message === 'Draft nicht gefunden' ? 404 : 400;
-    res.status(status).json({ error: message });
-  }
-});
 
 // Register studio routes AFTER cozy60 routes so specific routes match first
 
@@ -2231,109 +1629,7 @@ try {
 }
 
 // --- Helpers ---------------------------------------------------------------
-const ensureRoom = (roomCode: string): RoomState => {
-  const normalized = (roomCode || '').trim().toUpperCase();
-  const code = normalized || roomCode;
-  if (!rooms.has(code)) {
-    rooms.set(code, {
-      roomCode: code,
-      teams: {},
-      connectedTeams: {},
-      currentQuestionId: null,
-      answers: {},
-      quizId: null,
-      questionOrder: [],
-      remainingQuestionIds: [],
-      askedQuestionIds: [],
-      teamBoards: {},
-      bingoEnabled: false,
-      timerEndsAt: null,
-      questionTimerDurationMs: null,
-      questionIntroTimeout: null,
-      questionTimerTimeout: null,
-      screen: 'lobby',
-      questionPhase: 'idle',
-      lastActivityAt: Date.now(),
-      language: 'de',
-      gameState: INITIAL_GAME_STATE,
-      stateHistory: [INITIAL_GAME_STATE],
-      globalMuted: false,
-      undoSnapshots: [],
-      segmentTwoBaselineScores: null,
-      blitzPool: [],
-      blitzThemeLibrary: {},
-      blitzDisplayTimeMs: BLITZ_DISPLAY_TIME_MS,
-      blitzAnswerTimeMs: BLITZ_ANSWER_TIME_MS,
-      blitzBans: {},
-      blitzBanLimits: {},
-      blitzSelectedThemes: [],
-      blitzSetIndex: -1,
-      blitzPhase: 'IDLE',
-      blitzDeadlineAt: null,
-      blitzTheme: null,
-      blitzPinnedTheme: null,
-      blitzTopTeamId: null,
-      blitzLastTeamId: null,
-      blitzItems: [],
-      blitzItemIndex: -1,
-      blitzItemDeadlineAt: null,
-      blitzItemDurationMs: null,
-      blitzItemSolutions: [],
-      blitzAnswersByTeam: {},
-      blitzResultsByTeam: {},
-      blitzSubmittedTeamIds: [],
-      blitzRoundIntroTimeout: null,
-      rundlaufPool: [],
-      rundlaufPresetPool: [...RUN_LOOP_CATEGORIES],
-      rundlaufBans: [],
-      rundlaufSelectedCategories: [],
-      rundlaufPinnedCategory: null,
-      rundlaufTopTeamId: null,
-      rundlaufLastTeamId: null,
-      rundlaufRoundIndex: -1,
-      rundlaufTurnOrder: [],
-      rundlaufActiveTeamId: null,
-      rundlaufEliminatedTeamIds: [],
-      rundlaufUsedAnswers: [],
-      rundlaufUsedAnswersNormalized: [],
-      rundlaufLastAttempt: null,
-      rundlaufDeadlineAt: null,
-      rundlaufTurnStartedAt: null,
-      rundlaufTurnDurationMs: RUNDLAUF_TURN_TIME_MS,
-      rundlaufPointsWinner: RUNDLAUF_ROUND_POINTS,
-      rundlaufPointsTie: RUNDLAUF_DEFAULT_POINTS_TIE,
-      rundlaufRoundWinners: [],
-      rundlaufRoundIntroTimeout: null,
-      oneOfEightTurnOrder: [],
-      oneOfEightTurnIndex: 0,
-      oneOfEightActiveTeamId: null,
-      oneOfEightUsedChoiceIds: [],
-      oneOfEightLoserTeamId: null,
-      oneOfEightWinnerTeamIds: [],
-      oneOfEightFinished: false,
-      validationWarnings: [],
-      nextStage: null,
-      scoreboardOverlayForced: false,
-      mapSplitShown: false,
-      mapPinStep: 0,
-      avatarsEnabled: false,
-      halftimeTriggered: false,
-      finalsTriggered: false,
-      statsAnswerTimings: new Map(),
-      statsFunnyAnswers: new Map(),
-      statsWrongAnswerCounts: new Map(),
-      timerPausedAt: null,
-      timerRemainingMs: null,
-      questionHistory: []
-    });
-  }
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return rooms.get(code)!;
-};
 
-const touchRoom = (room: RoomState) => {
-  room.lastActivityAt = Date.now();
-};
 
 const getConnectedTeamIds = (room: RoomState) =>
   Object.keys(room.connectedTeams).filter((teamId) => room.connectedTeams[teamId] > 0);
@@ -2351,97 +1647,12 @@ const clearQuestionTimers = (room: RoomState) => {
   }
 };
 
-const clonePlain = <T,>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-const QUIZ_UNDO_STATES = new Set<CozyGameState>([
-  'LOBBY',
-  'INTRO',
-  'QUESTION_INTRO',
-  'Q_ACTIVE',
-  'Q_LOCKED',
-  'Q_REVEAL',
-  'SCOREBOARD',
-  'SCOREBOARD_PAUSE',
-  'SCOREBOARD_PRE_BLITZ'
-]);
 
-const canSnapshotUndo = (room: RoomState) => QUIZ_UNDO_STATES.has(room.gameState);
 
-const saveUndoSnapshot = (room: RoomState) => {
-  if (!canSnapshotUndo(room)) return;
-  const snapshot: RoomUndoSnapshot = {
-    gameState: room.gameState,
-    questionPhase: room.questionPhase,
-    currentQuestionId: room.currentQuestionId,
-    answers: clonePlain(room.answers),
-    teams: clonePlain(room.teams),
-    remainingQuestionIds: [...room.remainingQuestionIds],
-    askedQuestionIds: [...room.askedQuestionIds],
-    nextStage: room.nextStage,
-    screen: room.screen,
-    scoreboardOverlayForced: room.scoreboardOverlayForced
-  };
-  room.undoSnapshots.push(snapshot);
-  if (room.undoSnapshots.length > 10) {
-    room.undoSnapshots.shift();
-  }
-};
 
-const withUndoSnapshot = <T,>(room: RoomState, fn: () => T): T => {
-  const prevLength = room.undoSnapshots.length;
-  saveUndoSnapshot(room);
-  try {
-    return fn();
-  } catch (err) {
-    room.undoSnapshots = room.undoSnapshots.slice(0, prevLength);
-    throw err;
-  }
-};
 
-const undoLastHostStep = (room: RoomState) => {
-  const snapshot = room.undoSnapshots.pop();
-  if (!snapshot) throw new Error('Kein Schritt zum Zurückgehen verfügbar');
 
-  clearQuestionTimers(room);
-  room.gameState = snapshot.gameState;
-  room.questionPhase = snapshot.questionPhase;
-  room.currentQuestionId = snapshot.currentQuestionId;
-  room.answers = clonePlain(snapshot.answers);
-  room.teams = clonePlain(snapshot.teams);
-  room.remainingQuestionIds = [...snapshot.remainingQuestionIds];
-  room.askedQuestionIds = [...snapshot.askedQuestionIds];
-  room.nextStage = snapshot.nextStage;
-  room.screen = snapshot.screen;
-  room.scoreboardOverlayForced = snapshot.scoreboardOverlayForced;
-  room.timerEndsAt = null;
-  room.questionTimerDurationMs = null;
-  room.stateHistory = [...room.stateHistory.slice(-9), room.gameState];
-
-  broadcastState(room);
-  io.to(room.roomCode).emit('scoreUpdated');
-  return { stage: room.gameState, undone: true };
-};
-
-const startQuestionTimer = (room: RoomState, durationMs: number) => {
-  clearQuestionTimers(room);
-  const endsAt = Date.now() + durationMs;
-  room.timerEndsAt = endsAt;
-  room.questionTimerDurationMs = durationMs;
-  room.timerPausedAt = null;
-  room.timerRemainingMs = null;
-  room.questionTimerTimeout = setTimeout(() => {
-    if (room.gameState !== 'Q_ACTIVE') return;
-    if (!room.timerEndsAt) return;
-    clearQuestionTimers(room);
-    evaluateCurrentQuestion(room);
-    // Auto-reveal for estimate questions with ≤1 answer (skip Q_LOCKED)
-    const q = room.currentQuestionId ? questionById.get(room.currentQuestionId) : null;
-    if (q?.mechanic === 'estimate' && Object.keys(room.answers).length <= 1) {
-      revealAnswersForRoom(room);
-    }
-  }, durationMs + 20);
-  io.to(room.roomCode).emit('timerStarted', { endsAt });
-};
 
 const log = (roomCode: string, message: string, ...args: unknown[]) => {
   if (!DEBUG) return;
@@ -2457,17 +1668,8 @@ const slugify = (value: string) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-const buildQuizIdFromDraft = (draft: CozyQuizDraft, requested?: string | null) => {
-  if (requested && requested.trim()) return requested.trim();
-  const base = slugify(draft.meta?.title || draft.id);
-  return base ? `cozy-quiz-${base}` : `cozy-quiz-${draft.id}`;
-};
 
 
-const toBlitzOption = (theme: QuizBlitzTheme): BlitzThemeOption => ({
-  id: theme.id,
-  title: theme.title
-});
 
 
 const getTeamStandings = (room: RoomState) =>
@@ -2482,15 +1684,6 @@ const getTeamStandings = (room: RoomState) =>
       return (a.name || '').localeCompare(b.name || '');
     });
 
-const normalizeBlitzTheme = (theme: QuizBlitzTheme, fallbackIndex = 0): QuizBlitzTheme => {
-  const safeTitle = theme.title?.trim() || `Blitz-Thema ${fallbackIndex + 1}`;
-  const baseId = theme.id?.trim() || `${slugify(safeTitle)}-${fallbackIndex}`;
-  const normalizedItems = (theme.items || []).map((item, idx) => ({
-    ...item,
-    id: item.id?.trim() || `${baseId}-${idx + 1}`
-  }));
-  return { ...theme, id: baseId, title: safeTitle, items: normalizedItems };
-};
 
 
 
@@ -2755,124 +1948,12 @@ const clearRundlaufTurnTimer = (roomCode: string) => {
 
 
 
-const baseBingoCategories: QuizCategory[] = (['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'] as QuizCategory[]).flatMap(
-  (c) => Array.from({ length: 5 }, () => c)
-);
 
-const hasTripleSequence = (categories: QuizCategory[]) => {
-  const idx = (row: number, col: number) => row * 5 + col;
-  for (let row = 0; row < 5; row += 1) {
-    for (let col = 0; col <= 2; col += 1) {
-      const a = categories[idx(row, col)];
-      const b = categories[idx(row, col + 1)];
-      const c = categories[idx(row, col + 2)];
-      if (a === b && b === c) return true;
-    }
-  }
-  for (let col = 0; col < 5; col += 1) {
-    for (let row = 0; row <= 2; row += 1) {
-      const a = categories[idx(row, col)];
-      const b = categories[idx(row + 1, col)];
-      const c = categories[idx(row + 2, col)];
-      if (a === b && b === c) return true;
-    }
-  }
-  return false;
-};
 
-const shuffleCategories = () => {
-  const pool = [...baseBingoCategories];
-  for (let i = pool.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool;
-};
 
-const generateBingoBoard = (): BingoBoard => {
-  let candidate = shuffleCategories();
-  let attempts = 0;
-  while (hasTripleSequence(candidate) && attempts < 200) {
-    candidate = shuffleCategories();
-    attempts += 1;
-  }
-  return candidate.map((cat) => ({ category: cat, marked: false }));
-};
 
-const computeCategoryTotals = (order: string[]): Record<QuizCategory, number> => {
-  const totals: Record<QuizCategory, number> = {
-    Schaetzchen: 0,
-    'Mu-Cho': 0,
-    Stimmts: 0,
-    Cheese: 0,
-    GemischteTuete: 0
-  };
-  order.forEach((id) => {
-    const q = questionById.get(id);
-    if (q) totals[q.category] += 1;
-  });
-  return totals;
-};
 
-const buildQuestionMeta = (room: RoomState, questionId: string) => {
-  const order = room.questionOrder.length > 0 ? room.questionOrder : questions.map((q) => q.id);
-  const question = questionById.get(questionId);
-  if (!question) return null;
 
-  const position = order.findIndex((id) => id === questionId);
-  const globalIndex = Math.max(0, position) + 1;
-  const globalTotal = order.length || questions.length;
-  const totals = computeCategoryTotals(order);
-  const categoryTotal = totals[question.category] || 0;
-  const categoryIndex =
-    position >= 0
-      ? order.slice(0, position + 1).filter((id) => questionById.get(id)?.category === question.category).length
-      : 1;
-
-  const deLabel = CATEGORY_CONFIG[question.category]?.label ?? question.category;
-  const enLabel = CATEGORY_CONFIG[question.category]?.labelEn ?? deLabel;
-  const categoryName = combineText(deLabel, enLabel, room.language);
-
-  return {
-    globalIndex,
-    globalTotal,
-    categoryIndex,
-    categoryTotal,
-    categoryKey: question.category,
-    categoryName
-  };
-};
-
-const buildSlotMeta = (
-  question: AnyQuestion,
-  indexInCategory: number,
-  totalInCategory: number,
-  language: Language
-): SlotTransitionMeta => {
-  const cfg = CATEGORY_CONFIG[question.category];
-  const deLabel = cfg?.label ?? question.category;
-  const enLabel = cfg?.labelEn ?? deLabel;
-  const label = combineText(deLabel, enLabel, language);
-
-  const meta: SlotTransitionMeta = {
-    categoryId: question.category,
-    categoryLabel: label,
-    categoryIcon: cfg?.icon ?? '/logo.png',
-    questionIndex: indexInCategory,
-    totalQuestionsInCategory: totalInCategory
-  };
-
-  if (question.category === 'GemischteTuete' && question.mixedMechanic) {
-    const info = mixedMechanicMap[question.mixedMechanic];
-    if (info) {
-      meta.mechanicId = info.id;
-      meta.mechanicLabel = info.label;
-      meta.mechanicShortLabel = info.shortLabel;
-      meta.mechanicIcon = info.icon;
-    }
-  }
-  return meta;
-};
 
 
 const applyOverrides = (question: AnyQuestion): AnyQuestion => {
@@ -2976,14 +2057,6 @@ const persistQuestionImages = () => {
 };
 
 
-const persistCustomQuestions = () => {
-  try {
-    fs.mkdirSync(path.dirname(customQuestionsPath), { recursive: true });
-    fs.writeFileSync(customQuestionsPath, JSON.stringify(customQuestions, null, 2), 'utf-8');
-  } catch (err) {
-    console.error('Konnte customQuestions nicht speichern', err);
-  }
-};
 
 const translateText = async (text: string, src = 'DE', tgt = 'EN'): Promise<string> => {
   if (!text?.trim()) return text;
@@ -3006,293 +2079,26 @@ const translateText = async (text: string, src = 'DE', tgt = 'EN'): Promise<stri
   }
 };
 
-const autoTranslateQuestion = async (q: AnyQuestion): Promise<AnyQuestion> => {
-  const updates: Record<string, any> = {};
-  const any = q as any;
-  if (any.question) {
-    // Always re-translate — DeepL has 500k chars/month so this is safe.
-    // Clears any stale/wrong values previously cached by MyMemory.
-    const qDe = any.question.includes('/') ? any.question.split('/')[0].trim() : any.question;
-    updates.questionEn = await translateText(qDe);
-  }
-  if (Array.isArray(any.options) && any.options.length > 0) {
-    // Always re-derive optionsEn (clears stale MyMemory cache too).
-    {
-      updates.optionsEn = await Promise.all((any.options as string[]).map((o: string) => {
-        const slashIdx = o.indexOf('/');
-        const dePart = slashIdx >= 0 ? o.slice(0, slashIdx).trim() : o;
-        return translateText(dePart);
-      }));
-    }
-  }
-  if (!any.answerEn && any.answer) updates.answerEn = await translateText(any.answer);
-  if (!any.correctOrderEn && Array.isArray(any.correctOrder) && any.correctOrder.length > 0)
-    updates.correctOrderEn = await Promise.all((any.correctOrder as string[]).map((o: string) => translateText(o)));
-  return Object.keys(updates).length ? { ...q, ...updates } : q;
-};
 
 // Translate only fields that are missing (used as fallback in createSession for old questions)
 
-const upsertCustomQuestion = (question: AnyQuestion) => {
-  const baseIndex = questions.findIndex((entry) => entry.id === question.id);
-  if (baseIndex >= 0) questions[baseIndex] = question;
-  else questions.push(question);
-  questionById.set(question.id, question);
-  const customIndex = customQuestions.findIndex((entry) => entry.id === question.id);
-  if (customIndex >= 0) customQuestions[customIndex] = question;
-  else customQuestions.push(question);
-};
-
-const broadcastTeamsReady = (room: RoomState) => {
-  const teamsArr = Object.values(room.teams);
-  io.to(room.roomCode).emit('teamsReady', { teams: teamsArr });
-};
-
-const ensureSegmentTwoBaseline = (room: RoomState) => {
-  if (room.segmentTwoBaselineScores || room.askedQuestionIds.length <= 10) return;
-  room.segmentTwoBaselineScores = {};
-  Object.values(room.teams).forEach((team) => {
-    room.segmentTwoBaselineScores![team.id] = team.score ?? 0;
-  });
-};
-
-const configureRoomForQuiz = (room: RoomState, quizId: string) => {
-  const template = quizzes.get(quizId);
-  if (!template) throw new Error('Quiz template not found');
-  const questionIds =
-    template.mode === 'random'
-      ? [...template.questionIds].sort(() => Math.random() - 0.5)
-      : [...template.questionIds];
-  const rundlaufConfig = normalizeRundlaufConfig(template.rundlauf ?? null);
-
-  room.quizId = quizId;
-  room.questionOrder = [...questionIds];
-  room.remainingQuestionIds = [...questionIds];
-  room.askedQuestionIds = [];
-  room.currentQuestionId = null;
-  room.answers = {};
-  room.timerEndsAt = null;
-  room.questionTimerDurationMs = null;
-  room.timerPausedAt = null;
-  room.timerRemainingMs = null;
-  room.questionHistory = [];
-  room.screen = 'lobby';
-  room.questionPhase = 'answering';
-  room.bingoEnabled = Boolean(template.enableBingo ?? template.meta?.useBingo);
-  room.nextStage = null;
-  room.scoreboardOverlayForced = false;
-  room.halftimeTriggered = false;
-  room.finalsTriggered = false;
-  room.segmentTwoBaselineScores = null;
-  room.blitzPhase = 'IDLE';
-  const normalizedThemes = (template.blitz?.pool || []).map((theme, idx) => normalizeBlitzTheme(theme, idx));
-  room.blitzThemeLibrary = normalizedThemes.reduce<Record<string, QuizBlitzTheme>>((acc, theme) => {
-    acc[theme.id] = theme;
-    return acc;
-  }, {});
-  room.blitzPool = normalizedThemes.map(toBlitzOption);
-  room.blitzDisplayTimeMs = BLITZ_DISPLAY_TIME_MS;
-  room.blitzAnswerTimeMs = BLITZ_ANSWER_TIME_MS;
-  room.blitzBans = {};
-  room.blitzBanLimits = {};
-  room.blitzSelectedThemes = [];
-  room.blitzSetIndex = -1;
-  room.blitzDeadlineAt = null;
-  room.blitzTheme = null;
-  room.blitzPinnedTheme = null;
-  room.blitzTopTeamId = null;
-  room.blitzLastTeamId = null;
-  room.blitzItems = [];
-  room.blitzItemSolutions = [];
-  room.blitzAnswersByTeam = {};
-  room.blitzResultsByTeam = {};
-  room.blitzSubmittedTeamIds = [];
-  room.blitzRoundIntroTimeout = null;
-  room.rundlaufPool = [];
-  room.rundlaufPresetPool = rundlaufConfig.pool.length ? rundlaufConfig.pool : [...RUN_LOOP_CATEGORIES];
-  room.rundlaufBans = [];
-  room.rundlaufSelectedCategories = [];
-  room.rundlaufPinnedCategory = null;
-  room.rundlaufTopTeamId = null;
-  room.rundlaufLastTeamId = null;
-  room.rundlaufRoundIndex = -1;
-  room.rundlaufTurnOrder = [];
-  room.rundlaufActiveTeamId = null;
-  room.rundlaufEliminatedTeamIds = [];
-  room.rundlaufUsedAnswers = [];
-  room.rundlaufUsedAnswersNormalized = [];
-  room.rundlaufLastAttempt = null;
-  room.rundlaufDeadlineAt = null;
-  room.rundlaufTurnStartedAt = null;
-  room.rundlaufTurnDurationMs = rundlaufConfig.turnDurationMs ?? RUNDLAUF_TURN_TIME_MS;
-  room.rundlaufPointsWinner = rundlaufConfig.pointsWinner ?? RUNDLAUF_ROUND_POINTS;
-  room.rundlaufPointsTie = rundlaufConfig.pointsTie ?? RUNDLAUF_DEFAULT_POINTS_TIE;
-  room.rundlaufRoundWinners = [];
-  room.rundlaufRoundIntroTimeout = null;
-  room.oneOfEightTurnOrder = [];
-  room.oneOfEightTurnIndex = 0;
-  room.oneOfEightActiveTeamId = null;
-  room.oneOfEightUsedChoiceIds = [];
-  room.oneOfEightLoserTeamId = null;
-  room.oneOfEightWinnerTeamIds = [];
-  room.oneOfEightFinished = false;
-  recomputeRoomWarnings(room);
-  applyRoomState(room, { type: 'START_SESSION' });
-  broadcastTeamsReady(room);
-  broadcastState(room);
-  return questionIds.length;
-};
 
 
-const joinTeamToRoom = (room: RoomState, teamName: string, teamId?: string, avatarId?: string, color?: string) => {
-  const cleanName = teamName.trim();
-  if (!cleanName) throw new Error('teamName missing');
 
-  if (teamId && room.teams[teamId]) {
-    room.teams[teamId].name = cleanName;
-    if (avatarId) room.teams[teamId].avatarId = avatarId;
-    if (color) room.teams[teamId].color = color;
-    if (!room.teamBoards[teamId]) room.teamBoards[teamId] = generateBingoBoard();
-    broadcastTeamsReady(room);
-    broadcastState(room);
-    return { team: room.teams[teamId], board: room.teamBoards[teamId], created: false };
-  }
 
-  const existingByName = Object.values(room.teams).find((t) => t.name === cleanName);
-  if (existingByName) {
-    if (avatarId) existingByName.avatarId = avatarId;
-    if (color) existingByName.color = color;
-    if (!room.teamBoards[existingByName.id]) room.teamBoards[existingByName.id] = generateBingoBoard();
-    broadcastTeamsReady(room);
-    broadcastState(room);
-    return { team: existingByName, board: room.teamBoards[existingByName.id], created: false };
-  }
 
-  const newTeam: Team = { id: uuid(), name: cleanName, score: 0, isReady: false, avatarId: avatarId || undefined, color: color || undefined };
-  room.teams[newTeam.id] = newTeam;
-  room.teamBoards[newTeam.id] = generateBingoBoard();
-  if (room.segmentTwoBaselineScores) {
-    room.segmentTwoBaselineScores[newTeam.id] = newTeam.score ?? 0;
-  }
-  broadcastTeamsReady(room);
-  broadcastState(room);
-  return { team: newTeam, board: room.teamBoards[newTeam.id], created: true };
-};
 
 const normalizeString = (value: unknown) =>
   String(value ?? '')
     .trim()
     .toLowerCase();
 
-const levenshteinDistance = (str1: string, str2: string): number => {
-  const longer = str1.length > str2.length ? str1 : str2;
-  const shorter = str1.length > str2.length ? str2 : str1;
-  if (longer.length === 0) return 0;
-  
-  const costs = [];
-  for (let i = 0; i <= longer.length; i++) {
-    let lastValue = i;
-    for (let j = 0; j <= shorter.length; j++) {
-      if (i === 0) {
-        costs[j] = j;
-      } else if (j > 0) {
-        let newValue = costs[j - 1];
-        if (longer.charAt(i - 1) !== shorter.charAt(j - 1)) {
-          newValue = Math.min(Math.min(newValue, lastValue), costs[j]) + 1;
-        }
-        costs[j - 1] = lastValue;
-        lastValue = newValue;
-      }
-    }
-    if (i > 0) costs[shorter.length] = lastValue;
-  }
-  return costs[shorter.length];
-};
 
-const normalizeAnswer = (value: unknown) => {
-  const raw = String(value ?? '').trim().toLowerCase();
-  if (!raw) return '';
-  return raw
-    .replace(/\u00e4/g, 'ae')
-    .replace(/\u00f6/g, 'oe')
-    .replace(/\u00fc/g, 'ue')
-    .replace(/\u00df/g, 'ss')
-    .replace(/&/g, ' und ')
-    .replace(/[^a-z0-9 ]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-};
 
-const matchesAnswer = (userInput: unknown, expected: unknown) => {
-  const user = normalizeAnswer(userInput);
-  const expectedNorm = normalizeAnswer(expected);
-  if (!user || !expectedNorm) return false;
-  
-  // Exakter Match
-  if (user === expectedNorm) return true;
-  
-  // Substring Match (für kurze Antworten)
-  const userLen = user.length;
-  const expectedLen = expectedNorm.length;
-  if (userLen < 4) return false;
-  if (expectedLen > 10 && userLen < Math.ceil(expectedLen * 0.4)) return false;
-  if (expectedNorm.includes(user) || user.includes(expectedNorm)) return true;
-  
-  // Fuzzy Match mit Levenshtein Distance (für Schreibfehler)
-  const longer = userLen > expectedLen ? user : expectedNorm;
-  const shorter = userLen > expectedLen ? expectedNorm : user;
-  const distance = levenshteinDistance(longer, shorter);
-  const similarity = (longer.length - distance) / longer.length;
-  
-  // Tolerant bei Schreibfehlern: 0.85 Ähnlichkeit (1-2 Fehler bei 10+ Zeichen)
-  return similarity >= 0.85;
-};
 
-const getQuestionType = (question: AnyQuestion): CozyQuestionType => {
-  if ((question as any).type) return (question as any).type as CozyQuestionType;
-  switch (question.mechanic) {
-    case 'estimate':
-      return 'SCHAETZCHEN';
-    case 'betting':
-    case 'trueFalse':
-      return 'STIMMTS';
-    case 'imageQuestion':
-      return 'CHEESE';
-    default:
-      return 'MU_CHO';
-  }
-};
 
-const getQuestionPoints = (room: RoomState, question: AnyQuestion): number => {
-  const raw = Number((question as any).points);
-  if (Number.isFinite(raw) && raw > 0) return raw;
-  const segmentIndex = (question as any).segmentIndex;
-  if (segmentIndex === 0) return 1;
-  if (segmentIndex === 1) return 2;
-  const orderIndex = room.questionOrder.findIndex((id) => id === question.id);
-  if (orderIndex >= 0 && orderIndex >= 10) return 2;
-  return 1;
-};
 
-const getBunteMaxAward = (question: AnyQuestion, fallback: number): number => {
-  const payload = (question as any)?.bunteTuete;
-  if (payload && typeof payload.maxPoints === 'number' && payload.maxPoints > 0) {
-    return payload.maxPoints;
-  }
-  const segmentIndex = (question as any).segmentIndex;
-  if (segmentIndex === 0) return 2;
-  if (segmentIndex === 1) return 3;
-  return fallback;
-};
 
-const recomputeRoomWarnings = (room: RoomState) => {
-  const warnings: string[] = [];
-  const blitzSize = room.blitzPool.length || Object.keys(room.blitzThemeLibrary || {}).length;
-  if (blitzSize > 0 && blitzSize < BLITZ_THEME_RECOMMENDED_MIN) {
-    warnings.push(`Blitz-Pool enthält nur ${blitzSize} Themen (>=${BLITZ_THEME_RECOMMENDED_MIN} empfohlen).`);
-  }
-  room.validationWarnings = warnings;
-};
 
 const validateQuestionStructure = (question: AnyQuestion): string[] => {
   const issues: string[] = [];
@@ -3353,25 +2159,6 @@ const validateQuestionStructure = (question: AnyQuestion): string[] => {
   return issues;
 };
 
-const collectCozyDraftWarnings = (draft: CozyQuizDraft): string[] => {
-  const warnings: string[] = [];
-  const blitzThemes = draft.blitz?.pool?.length ?? 0;
-  if (blitzThemes < 14) {
-    warnings.push(`Blitz-Pool enthaelt nur ${blitzThemes} Themen (>=14 empfohlen).`);
-  }
-  const rundlaufThemes = Array.isArray(draft.rundlauf?.pool) ? draft.rundlauf.pool.length : 0;
-  if (rundlaufThemes > 0 && rundlaufThemes < 6) {
-    warnings.push(`Rundlauf-Pool enthaelt nur ${rundlaufThemes} Kategorien (>=6 empfohlen).`);
-  }
-  if (draft.questions.length !== COZY_SLOT_TEMPLATE.length) {
-    warnings.push(`Fragen-Slots unvollstaendig: ${draft.questions.length}/${COZY_SLOT_TEMPLATE.length}.`);
-  }
-  draft.questions.forEach((question, idx) => {
-    const issues = validateQuestionStructure(question);
-    issues.forEach((issue) => warnings.push(`F${idx + 1}: ${issue}`));
-  });
-  return warnings;
-};
 
 type BunteEvaluationResult = {
   awardedPoints: number;
@@ -3380,272 +2167,10 @@ type BunteEvaluationResult = {
   tieBreaker?: AnswerTieBreaker | null;
 };
 
-const haversineKm = (lat1: number, lng1: number, lat2: number, lng2: number): number => {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLng = ((lng2 - lng1) * Math.PI) / 180;
-  const a =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-};
 
-const quantizePoints = (value: number, limit: number): number => {
-  if (!Number.isFinite(value)) return 0;
-  const clamped = Math.min(limit, Math.max(0, value));
-  return Math.round(clamped * 100) / 100;
-};
 
-const evaluateBunteSubmission = (
-  question: AnyQuestion,
-  submission: unknown,
-  maxPoints: number
-): BunteEvaluationResult => {
-  const setup = (question as any).bunteTuete;
-  const payload = submission as BunteTueteSubmission;
-  if (!setup || !payload || typeof payload !== 'object' || payload.kind !== setup.kind) {
-    return { awardedPoints: 0, awardedDetail: 'Keine gültige Eingabe', isCorrect: false, tieBreaker: null };
-  }
-  const segmentCap = getBunteMaxAward(question, maxPoints);
-  const safeMax = Math.max(1, Math.min(maxPoints, segmentCap));
-  if (setup.kind === 'top5') {
-    const submission = payload as BunteTueteTop5Submission;
-    const rawOrder = Array.isArray(submission.order) ? submission.order : [];
-    const normalizedOrder = Array.from(new Set(rawOrder))
-      .map((entry) => (typeof entry === 'string' ? entry.trim().toLowerCase() : ''))
-      .filter(Boolean);
 
-    const targetRaw =
-      Array.isArray(setup.correctOrder) && setup.correctOrder.length > 0
-        ? setup.correctOrder
-        : setup.items?.map((item: any) => item.id) ?? [];
-    const targetLabels = (setup.items ?? []).map((i: any) => i.label?.trim().toLowerCase()).filter(Boolean);
-    const targetNormalized = Array.from(
-      new Set(
-        targetRaw
-          .map((t: string) => t?.trim().toLowerCase())
-          .filter(Boolean)
-          .concat(targetLabels)
-      )
-    );
 
-    if (!targetNormalized.length) return { awardedPoints: 0, awardedDetail: null, isCorrect: false };
-
-    const hits = normalizedOrder.filter((val) => targetNormalized.includes(val)).length;
-    return {
-      awardedPoints: 0, // Winner-takes-all handled after evaluating all teams
-      awardedDetail: `${hits}/${targetNormalized.length} Treffer`,
-      isCorrect: false,
-      tieBreaker: {
-        label: 'TOP5',
-        primary: hits,
-        secondary: hits,
-        detail: 'Treffer'
-      }
-    };
-  }
-  if (setup.kind === 'precision') {
-    const submission = payload as BunteTuetePrecisionSubmission;
-    const text = typeof submission.text === 'string' ? submission.text.trim() : '';
-    if (!text) return { awardedPoints: 0, awardedDetail: 'Keine Antwort', isCorrect: false };
-    const normalized = normalizeText(text);
-    const threshold = typeof setup.similarityThreshold === 'number' ? setup.similarityThreshold : 0.85;
-    let bestPoints = 0;
-    let bestLabel: string | null = null;
-    (setup.ladder || []).forEach((step: { label: string; acceptedAnswers: string[]; points: number }) => {
-      (step.acceptedAnswers || []).forEach((candidate) => {
-        const score = similarityScore(normalized, normalizeText(candidate));
-        if (score >= threshold && step.points > bestPoints) {
-          bestPoints = Math.min(step.points, safeMax);
-          bestLabel = step.label;
-        }
-      });
-    });
-    return {
-      awardedPoints: bestPoints,
-      awardedDetail: bestLabel ? `Treffer: ${bestLabel}` : null,
-      isCorrect: bestPoints >= safeMax,
-      tieBreaker: null
-    };
-  }
-  if (setup.kind === 'oneOfEight') {
-    const submission = payload as BunteTueteOneOfEightSubmission;
-    const selection = typeof submission.choiceId === 'string' ? submission.choiceId.trim() : '';
-    const falseStatement = (setup.statements || []).find((stmt: { id: string; isFalse?: boolean }) => stmt.isFalse);
-    const isMatch =
-      Boolean(falseStatement) &&
-      selection &&
-      selection.toLowerCase() === String(falseStatement?.id ?? '').toLowerCase();
-    return {
-      awardedPoints: isMatch ? safeMax : 0,
-      awardedDetail: selection ? `Gewählt: ${selection.toUpperCase()}` : null,
-      isCorrect: Boolean(isMatch),
-      tieBreaker: null
-    };
-  }
-  if (setup.kind === 'order') {
-    const submission = payload as BunteTueteOrderSubmission;
-    const selectedCriteria =
-      submission.criteriaId || setup.defaultCriteriaId || Object.keys(setup.correctByCriteria || {})[0];
-    const expected = (setup.correctByCriteria || {})[selectedCriteria] || [];
-    const order = Array.isArray(submission.order) ? submission.order : [];
-    let matches = 0;
-    expected.forEach((val: string, idx: number) => {
-      if (order[idx] === val) matches += 1;
-    });
-    const perIndexWeight =
-      typeof setup.partialPoints === 'number' && setup.partialPoints > 0
-        ? setup.partialPoints
-        : safeMax / Math.max(expected.length, 1);
-    let points = quantizePoints(matches * perIndexWeight, safeMax);
-    const isCorrect = expected.length > 0 && matches === expected.length;
-    if (isCorrect && typeof setup.fullPoints === 'number') {
-      points = quantizePoints(setup.fullPoints, safeMax);
-    }
-    return {
-      awardedPoints: points,
-      awardedDetail: expected.length ? `${matches}/${expected.length} Positionen` : null,
-      isCorrect,
-      tieBreaker: expected.length
-        ? {
-            label: 'ORDNEN',
-            primary: matches,
-            secondary: expected.length,
-            detail: 'Positionen korrekt'
-          }
-        : null
-    };
-  }
-  if (setup.kind === 'map') {
-    const submission = payload as BunteTueteMapSubmission;
-    const lat = typeof submission.lat === 'number' ? submission.lat : NaN;
-    const lng = typeof submission.lng === 'number' ? submission.lng : NaN;
-    if (isNaN(lat) || isNaN(lng)) {
-      return { awardedPoints: 0, awardedDetail: 'Kein Pin gesetzt', isCorrect: false, tieBreaker: null };
-    }
-    const target = setup.target as { lat: number; lng: number };
-    const distanceKm = haversineKm(lat, lng, target.lat, target.lng);
-    const tiers: Array<{ maxDistanceKm: number; points: number; label: string }> = setup.scoringTiers?.length
-      ? setup.scoringTiers
-      : [
-          { maxDistanceKm: 50,   points: safeMax,                          label: 'Perfekt' },
-          { maxDistanceKm: 300,  points: Math.ceil(safeMax * 0.75),        label: 'Sehr nah' },
-          { maxDistanceKm: 1000, points: Math.ceil(safeMax * 0.5),         label: 'Nah dran' },
-          { maxDistanceKm: 3000, points: Math.max(1, Math.ceil(safeMax * 0.25)), label: 'Weit weg' },
-        ];
-    let awardedPoints = 0;
-    let awardedLabel: string | null = null;
-    for (const tier of tiers.sort((a, b) => a.maxDistanceKm - b.maxDistanceKm)) {
-      if (distanceKm <= tier.maxDistanceKm) {
-        awardedPoints = Math.min(tier.points, safeMax);
-        awardedLabel = tier.label;
-        break;
-      }
-    }
-    const distStr = distanceKm < 1 ? '<1 km' : distanceKm < 1000 ? `${Math.round(distanceKm)} km` : `${(distanceKm / 1000).toFixed(1).replace('.', ',')} Tsd. km`;
-    return {
-      awardedPoints,
-      awardedDetail: awardedLabel ? `${awardedLabel} (${distStr})` : `Zu weit (${distStr})`,
-      isCorrect: awardedPoints >= safeMax,
-      tieBreaker: {
-        label: 'KARTE',
-        primary: -Math.round(distanceKm), // negativ: kleiner = besser
-        secondary: 0,
-        detail: `${distStr} entfernt`
-      }
-    };
-  }
-  return { awardedPoints: 0, awardedDetail: null, isCorrect: false, tieBreaker: null };
-};
-
-const evaluateAnswer = (question: AnyQuestion, answer: unknown): boolean => {
-  if (!question) return false;
-  if (question.mechanic === 'estimate') {
-    const target = (question as any).targetValue;
-    if (target === undefined || target === null) return false;
-    const num = Number(String(answer).replace(',', '.'));
-    if (!Number.isFinite(num)) return false;
-    const tolerance = Math.max(Math.abs(target) * 0.05, 1); // 5% oder mindestens 1
-    return Math.abs(num - target) <= tolerance;
-  }
-  if (question.mechanic === 'multipleChoice') {
-    const idx = Number(answer);
-    return idx === (question as any).correctIndex;
-  }
-  if (question.mechanic === 'betting') {
-    // Bewertung erfolgt in evaluateCurrentQuestion; hier keine Einzelpruefung
-    return false;
-  }
-  if (question.mechanic === 'trueFalse') {
-    const boolVal = String(answer).toLowerCase() === 'true';
-    return boolVal === (question as any).isTrue;
-  }
-  const order = (question as any).correctOrder as string[] | undefined;
-  const orderEn = (question as any).correctOrderEn as string[] | undefined;
-  if (order && order.length > 0) {
-    const orderStr = normalizeString(answer).replace(/\s+/g, '');
-    const targetOrder = order.join(',').toLowerCase();
-    const targetOrderEn = orderEn ? orderEn.join(',').toLowerCase() : undefined;
-    if (orderStr === targetOrder.replace(/\s+/g, '')) return true;
-    if (targetOrderEn && orderStr === targetOrderEn.replace(/\s+/g, '')) return true;
-    return false;
-  }
-  if ((question as any).answer) {
-    const deAnswer = (question as any).answer;
-    const enAnswer = (question as any).answerEn;
-    if (matchesAnswer(answer, deAnswer)) return true;
-    if (enAnswer && matchesAnswer(answer, enAnswer)) return true;
-    return false;
-  }
-  return false;
-};
-
-const formatSolution = (question: AnyQuestion, language: Language): string | undefined => {
-  if (!question) return undefined;
-  if (question.mechanic === 'estimate') {
-    const rawUnit: string | undefined = (question as any).unit;
-    const resolvedUnit = (() => {
-      if (!rawUnit) return '';
-      const slash = rawUnit.indexOf('/');
-      if (slash < 0) return ` ${rawUnit}`;
-      const de = rawUnit.slice(0, slash).trim();
-      const en = rawUnit.slice(slash + 1).trim();
-      return ` ${language === 'en' ? en : de}`;
-    })();
-    return `${(question as any).targetValue ?? ''}${resolvedUnit}`.trim();
-  }
-  if (question.mechanic === 'multipleChoice') {
-    const idx = (question as any).correctIndex;
-    if (idx === undefined) return undefined;
-    const opts = combineArray(
-      (question as any).options ?? [],
-      (question as any).optionsEn,
-      language
-    );
-    return Array.isArray(opts) ? opts[idx] : undefined;
-  }
-  if (question.mechanic === 'betting') {
-    const idx = (question as any).correctIndex;
-    const opts = combineArray((question as any).options ?? [], (question as any).optionsEn, language);
-    return Array.isArray(opts) ? opts[idx] : undefined;
-  }
-  if (question.mechanic === 'trueFalse') {
-    const de = (question as any).isTrue ? 'Wahr' : 'Falsch';
-    const en = (question as any).isTrue ? 'True' : 'False';
-    return combineText(de, en, language);
-  }
-  if ((question as any).correctOrder) {
-    const ord = combineArray(
-      (question as any).correctOrder ?? [],
-      (question as any).correctOrderEn,
-      language
-    );
-    return Array.isArray(ord) ? ord.join(' / ') : undefined;
-  }
-  const deAnswer = (question as any).answer ?? undefined;
-  const enAnswer = (question as any).answerEn ?? undefined;
-  return combineText(deAnswer, enAnswer, language);
-};
 
 const sanitizeQuestionForTeams = (question: AnyQuestion): AnyQuestion => {
   const q = { ...(question as any) };
@@ -3896,157 +2421,6 @@ const broadcastState = (room: RoomState) => {
   io.to(room.roomCode).emit('server:stateUpdate', buildStateUpdatePayload(room));
 };
 
-const evaluateCurrentQuestion = (room: RoomState): boolean => {
-  if (!room.currentQuestionId) return false;
-  if (room.questionPhase === 'evaluated' || room.questionPhase === 'revealed') return false;
-  const question = questionById.get(room.currentQuestionId);
-  if (!question) return false;
-  clearQuestionTimers(room);
-  applyRoomState(room, { type: 'HOST_LOCK' });
-  const basePoints = getQuestionPoints(room, question);
-
-  const buntePayload = (question as any).bunteTuete;
-  if (buntePayload && buntePayload.kind === 'oneOfEight') {
-    // Falls noch nicht entschieden: als Unentschieden werten
-    if (!room.oneOfEightFinished) {
-      concludeOneOfEight(
-        room,
-        question,
-        null,
-        [],
-        'Unentschieden',
-        'Unentschieden',
-        'Unentschieden – falsche Aussage nicht gewählt'
-      );
-      return true;
-    }
-    return false;
-  }
-
-  if (question.mechanic === 'estimate') {
-    const parsed = Object.entries(room.answers).map(([teamId, ans]) => {
-      const num = Number(String(ans.value ?? '').replace(',', '.'));
-      return {
-        teamId,
-        diff:
-          Number.isFinite(num) && (question as any).targetValue !== undefined
-            ? Math.abs(num - (question as any).targetValue)
-            : Number.POSITIVE_INFINITY
-      };
-    });
-    const minDiff = parsed.reduce((m, p) => Math.min(m, p.diff), Number.POSITIVE_INFINITY);
-    const bestDeviation = Number.isFinite(minDiff) ? minDiff : null;
-    Object.entries(room.answers).forEach(([teamId, ans]) => {
-      const p = parsed.find((x) => x.teamId === teamId);
-      const isCorrect = p ? p.diff === minDiff : false;
-      const awardedPoints = isCorrect ? basePoints : 0;
-      const deviation = p?.diff ?? null;
-      room.answers[teamId] = {
-        ...ans,
-        isCorrect,
-        deviation,
-        bestDeviation,
-        awardedPoints,
-                awardedDetail:
-          deviation !== null && Number.isFinite(deviation) ? `Diff ${Math.round(deviation * 100) / 100}` : null,
-        autoGraded: true,
-        tieBreaker:
-          deviation !== null && Number.isFinite(deviation)
-            ? { label: 'DIFF', primary: deviation, detail: 'Näher dran gewinnt' }
-            : null
-      };
-    });
-  } else if (question.mechanic === 'betting') {
-    const correctIdx = (question as any).correctIndex ?? 0;
-    const pool = (question as any).pointsPool ?? 10;
-    const betPointsByTeam = Object.entries(room.answers).map(([teamId, ans]) => {
-      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
-      const ptsRaw = Number(arr[correctIdx] ?? 0);
-      const points = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
-      return { teamId, points };
-    });
-    const maxPoints = betPointsByTeam.reduce((max, entry) => Math.max(max, entry.points), 0);
-    // Find all teams with maxPoints (winners can tie)
-    const winnersWithMaxPoints = betPointsByTeam.filter(entry => entry.points === maxPoints && maxPoints > 0).map(entry => entry.teamId);
-    Object.entries(room.answers).forEach(([teamId, ans]) => {
-      const arr = Array.isArray(ans.value) ? ans.value : [0, 0, 0];
-      const ptsRaw = Number(arr[correctIdx] ?? 0);
-      const betPoints = Number.isFinite(ptsRaw) ? Math.max(0, Math.min(pool, ptsRaw)) : 0;
-      const awardedPoints = winnersWithMaxPoints.includes(teamId) ? basePoints : 0;
-      room.answers[teamId] = {
-        ...ans,
-        isCorrect: awardedPoints > 0,
-        betPoints,
-        betPool: pool,
-        awardedPoints,
-        awardedDetail: awardedPoints > 0 ? `${basePoints} Punkte` : '0 Punkte',
-        autoGraded: true,
-        tieBreaker: null
-      };
-    });
-  } else if (getQuestionType(question) === 'BUNTE_TUETE') {
-    const evaluations: Record<string, ReturnType<typeof evaluateBunteSubmission>> = {};
-    Object.entries(room.answers).forEach(([teamId, ans]) => {
-      const evaluation = evaluateBunteSubmission(question, ans.value, basePoints);
-      evaluations[teamId] = evaluation;
-    });
-
-    // TOP5: team with most hits wins. Points depend on round (segmentIndex 0-9 = 1pt, 10-19 = 2pt). Ties get full points each.
-    if ((question as any).bunteTuete?.kind === 'top5') {
-      const segIdx = typeof (question as any).segmentIndex === 'number' ? (question as any).segmentIndex : 0;
-      const top5Points = segIdx >= 10 ? 2 : 1;
-      const hitsPerTeam = Object.entries(evaluations).map(([teamId, ev]) => ({ teamId, hits: ev.tieBreaker?.primary ?? 0 }));
-      const bestHits = hitsPerTeam.reduce((max, { hits }) => Math.max(max, hits), 0);
-      const winners = hitsPerTeam.filter(({ hits }) => hits === bestHits && hits > 0).map(({ teamId }) => teamId);
-
-      Object.entries(room.answers).forEach(([teamId, ans]) => {
-        const ev = evaluations[teamId];
-        const hits = ev.tieBreaker?.primary ?? 0;
-        const isWinner = winners.includes(teamId);
-        room.answers[teamId] = {
-          ...ans,
-          isCorrect: isWinner,
-          awardedPoints: isWinner ? top5Points : 0,
-          awardedDetail: `${hits} Treffer${isWinner ? ` (+${top5Points}P)` : ''}`,
-          autoGraded: true,
-          tieBreaker: ev.tieBreaker ?? null
-        };
-      });
-    } else {
-      Object.entries(room.answers).forEach(([teamId, ans]) => {
-        const evaluation = evaluations[teamId];
-        room.answers[teamId] = {
-          ...ans,
-          isCorrect: evaluation.isCorrect,
-          awardedPoints: evaluation.awardedPoints,
-          awardedDetail: evaluation.awardedDetail,
-          autoGraded: true,
-          tieBreaker: evaluation.tieBreaker ?? null
-        };
-      });
-    }
-  } else {
-    Object.entries(room.answers).forEach(([teamId, ans]) => {
-      const isCorrect = evaluateAnswer(question, ans.value);
-      room.answers[teamId] = {
-        ...ans,
-        isCorrect,
-        awardedPoints: isCorrect ? basePoints : 0,
-        autoGraded: true,
-        tieBreaker: null
-      };
-    });
-  }
-
-  room.questionPhase = 'evaluated';
-  room.timerEndsAt = null;
-  const solution = formatSolution(question, room.language);
-  broadcastState(room);
-  io.to(room.roomCode).emit('evaluation:started');
-  io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
-  io.to(room.roomCode).emit('timerStopped');
-  return true;
-};
 
 // --- API Routes -------------------------------------------------------------
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
@@ -4065,23 +2439,6 @@ if (DEBUG) {
 // (grep frontend/src → 0 Treffer). /api/catalogs + /api/quizzes bleiben.
 
 // Katalogliste
-app.get('/api/catalogs', async (_req, res) => {
-  try {
-    let allQs: AnyQuestion[];
-    
-    if (isDBConnected()) {
-      allQs = await getQuestionsFromDB();
-    } else {
-      allQs = Array.from(questions);
-    }
-
-    const set = new Set<string>();
-    allQs.forEach((q) => set.add((q as any).catalogId || 'default'));
-    res.json({ catalogs: Array.from(set).sort() });
-  } catch (err) {
-    res.status(500).json({ error: 'Katalog konnte nicht geladen werden' });
-  }
-});
 
 app.get('/api/questions/custom/export', requirePin, async (_req, res) => {
   try {
@@ -4099,59 +2456,7 @@ app.get('/api/questions/custom/export', requirePin, async (_req, res) => {
   }
 });
 
-app.get('/api/quizzes', (_req, res) => {
-  res.json({ quizzes: Array.from(quizzes.values()) });
-});
 
-app.post('/api/quizzes/custom', requirePin, (req, res) => {
-  const { name, questionIds, meta, categories, mode } = req.body as {
-    name?: string;
-    questionIds?: string[];
-    meta?: unknown;
-    categories?: unknown;
-    mode?: 'ordered' | 'random';
-  };
-  if (!name || !Array.isArray(questionIds)) return res.status(400).json({ error: 'name oder questionIds fehlen' });
-  if (questionIds.length !== 25) return res.status(400).json({ error: 'Es muessen genau 25 questionIds sein' });
-
-  const counts: Record<QuizCategory, number> = {
-    Schaetzchen: 0,
-    'Mu-Cho': 0,
-    Stimmts: 0,
-    Cheese: 0,
-    GemischteTuete: 0
-  };
-  for (const id of questionIds) {
-    const q = questionById.get(id);
-    if (!q) return res.status(400).json({ error: `Unbekannte questionId: ${id}` });
-    counts[q.category] = (counts[q.category] ?? 0) + 1;
-  }
-  if (!Object.values(counts).every((c) => c === 5)) {
-    return res.status(400).json({ error: 'Jede Kategorie muss genau 5 Fragen enthalten' });
-  }
-
-  const id = `custom-${Date.now()}`;
-  const template: QuizTemplate = {
-    id,
-    name,
-    mode: mode === 'ordered' || mode === 'random' ? mode : 'random',
-    questionIds: [...questionIds],
-    meta,
-    categories
-  } as QuizTemplate;
-  quizzes.set(id, template);
-  // usage aktualisieren
-  const now = new Date().toISOString();
-  questionIds.forEach((qid) => {
-    const entry = questionUsageMap[qid] ?? { usedIn: [], lastUsedAt: null };
-    const set = new Set(entry.usedIn ?? []);
-    set.add(name);
-    questionUsageMap[qid] = { usedIn: Array.from(set), lastUsedAt: now };
-  });
-  persistQuestionUsage();
-
-  return res.status(201).json({ quiz: template });
-});
 
 // Bild-Upload
 app.post('/api/upload/question-image', requirePin, upload.single('file'), async (req, res) => {
@@ -4205,54 +2510,7 @@ app.post('/api/upload/question-audio', requirePin, audioUpload.single('file'), a
 });
 
 // Blitz image upload
-app.post('/api/upload/blitz-image', requirePin, blitzUpload.single('file'), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
-  const localUrl = `/uploads/blitz/${req.file.filename}`;
 
-  try {
-    const finalUrl = isCloudinaryEnabled
-      ? await uploadLocalFileToCloudinary(req.file.path, 'blitz')
-      : localUrl;
-    return res.json({ imageUrl: finalUrl });
-  } catch (err) {
-    console.error('Fehler beim Blitz-Image Upload:', err);
-    return res.status(500).json({ error: 'Bild konnte nicht hochgeladen werden' });
-  } finally {
-    if (isCloudinaryEnabled && req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch {
-        // ignore cleanup errors
-      }
-    }
-  }
-});
-
-app.delete('/api/upload/blitz-image', requirePin, (req, res) => {
-  const { imageUrl } = req.body as { imageUrl?: string };
-  if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
-
-  if (isCloudinaryEnabled && imageUrl.startsWith('https://res.cloudinary.com/')) {
-    const publicId = extractCloudinaryPublicId(imageUrl);
-    if (publicId) {
-      cloudinary.uploader.destroy(publicId, { resource_type: 'image' }).catch(() => {
-        // ignore delete errors for non-blocking UX
-      });
-    }
-    return res.json({ ok: true });
-  }
-
-  const filename = path.basename(imageUrl);
-  const filePath = path.join(blitzUploadDir, filename);
-  if (fs.existsSync(filePath)) {
-    try {
-      fs.unlinkSync(filePath);
-    } catch {
-      // ignore
-    }
-  }
-  return res.json({ ok: true });
-});
 
 app.delete('/api/upload/question-image', requirePin, (req, res) => {
   const { questionId, imageUrl } = req.body as { questionId?: string; imageUrl?: string };
@@ -4300,1061 +2558,68 @@ app.post('/api/verify-pin', (req, res) => {
 
 // Admin Session Generation Endpoint
 // POST /api/rooms/:roomCode/admin-session - Creates a new admin session token
-app.post('/api/rooms/:roomCode/admin-session', (req, res) => {
-  const { pin } = req.body as { pin?: string };
-  if (!pin || pin !== ADMIN_PIN) {
-    return res.status(401).json({ error: 'Nicht authentifiziert — PIN erforderlich' });
-  }
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  const session = createAdminSession(roomCode);
-  console.log(`[Auth] Admin-Session erstellt für Room ${roomCode}: ${session.token.substring(0, 8)}...`);
-  return res.json({ token: session.token, expiresAt: session.expiresAt });
-});
 
 // GET alias for environments where POST may be restricted
-app.get('/api/rooms/:roomCode/admin-session', (req, res) => {
-  const pin = req.query.pin as string;
-  if (!pin || pin !== ADMIN_PIN) {
-    return res.status(401).json({ error: 'Nicht authentifiziert — PIN erforderlich' });
-  }
-  const { roomCode } = req.params;
-  ensureRoom(roomCode);
-  const session = createAdminSession(roomCode);
-  console.log(`[Auth] Admin-Session erstellt (GET) für Room ${roomCode}: ${session.token.substring(0, 8)}...`);
-  return res.json({ token: session.token, expiresAt: session.expiresAt });
-});
-
-app.post('/api/rooms/:roomCode/use-quiz', async (req, res) => {
-  const { roomCode } = req.params;
-  let token = req.query.token as string;
-  
-  // Auth check: Wenn kein Token vorhanden, versuche einen mit PIN zu erstellen
-  if (!token) {
-    const pin = req.body?.pin || req.query.pin;
-    if (pin !== ADMIN_PIN) {
-      return res.status(401).json({ error: 'PIN erforderlich' });
-    }
-    try {
-      const session = createAdminSession(roomCode);
-      token = session.token;
-      console.log(`[Auth] Admin-Session auto-created für Room ${roomCode}`);
-    } catch (err) {
-      console.warn(`[Auth] Fehler beim Auto-Create der Session für ${roomCode}`, err);
-    }
-  }
-  
-  // Validate token if provided
-  if (token && !validateAdminSession(roomCode, token)) {
-    return res.status(401).json({ error: 'Nicht authentifiziert' });
-  }
-
-  const { quizId } = req.body as { quizId?: string };
-  
-  // Validate quiz ID
-  const quizValidation = validateQuizId(quizId, quizzes);
-  if (!quizValidation.valid) return res.status(400).json({ error: quizValidation.error });
-
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  const remaining = configureRoomForQuiz(room, quizValidation.value);
-
-  io.to(roomCode).emit('quizSelected', { quizId: quizValidation.value, remaining });
-  return res.json({ ok: true, quizId: quizValidation.value, remaining });
-});
-
-const enterQuestionActive = (room: RoomState, questionId: string, remainingOverride?: number) => {
-  const question = questionById.get(questionId);
-  if (!question) return;
-  const questionWithImage = applyOverrides(question);
-  room.questionIntroTimeout = null;
-  room.screen = 'question';
-  const meta = buildQuestionMeta(room, questionId);
-  const localized = localizeQuestion(questionWithImage, room.language);
-  room.questionPhase = 'answering';
-  const buntePayload = (questionWithImage as any).bunteTuete;
-  if (buntePayload && buntePayload.kind === 'oneOfEight') {
-    startOneOfEightTurnState(room, questionWithImage);
-  }
-  room.mapSplitShown = false;
-  room.mapPinStep = 0;
-  applyRoomState(room, { type: 'FORCE', next: 'Q_ACTIVE' });
-  startQuestionTimer(room, DEFAULT_QUESTION_TIME * 1000);
-  io.to(room.roomCode).emit('questionStarted', {
-    questionId,
-    remaining: remainingOverride ?? room.remainingQuestionIds.length,
-    meta
-  });
-  io.to(room.roomCode).emit('beamer:show-question', { question: localized, meta });
-  io.to(room.roomCode).emit('team:show-question', { question: sanitizeQuestionForTeams(localized) });
-  broadcastState(room);
-};
-
-const startQuestionWithSlot = (
-  room: RoomState,
-  questionId: string,
-  remainingOverride?: number,
-  res?: express.Response
-) => {
-  touchRoom(room);
-  const question = questionById.get(questionId);
-  const questionWithImage = question ? applyOverrides(question) : null;
-  if (!questionWithImage) {
-    if (res) res.status(400).json({ error: 'Ungueltige questionId' });
-    return;
-  }
-
-  // Save previous question answers to history before clearing
-  if (room.currentQuestionId && Object.keys(room.answers).length > 0) {
-    room.questionHistory.push({
-      questionId: room.currentQuestionId,
-      answers: { ...room.answers }
-    });
-  }
-
-  room.currentQuestionId = questionId;
-  room.answers = {};
-  room.oneOfEightTurnOrder = [];
-  room.oneOfEightTurnIndex = 0;
-  room.oneOfEightActiveTeamId = null;
-  room.oneOfEightUsedChoiceIds = [];
-  room.oneOfEightLoserTeamId = null;
-  room.oneOfEightWinnerTeamIds = [];
-  room.oneOfEightFinished = false;
-  room.timerEndsAt = null;
-  room.questionTimerDurationMs = null;
-  clearQuestionTimers(room);
-  room.nextStage = null;
-  room.askedQuestionIds = Array.from(new Set([...room.askedQuestionIds, questionId]));
-  ensureSegmentTwoBaseline(room);
-  room.screen = 'slot';
-  room.questionPhase = 'idle';
-  applyRoomState(room, { type: 'FORCE', next: 'QUESTION_INTRO' });
-  broadcastState(room);
-
-  const askedInCategory = room.askedQuestionIds.filter(
-    (id) => questionById.get(id)?.category === questionWithImage.category
-  ).length;
-  const totalInCategory = room.questionOrder.filter(
-    (id) => questionById.get(id)?.category === questionWithImage.category
-  ).length;
-
-  const slotMeta = buildSlotMeta(
-    questionWithImage,
-    Math.max(0, askedInCategory - 1),
-    totalInCategory || 5,
-    room.language
-  );
-  log(room.roomCode, `Slot-Transition for question ${questionWithImage.id}`);
-  io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
-
-  room.questionIntroTimeout = setTimeout(() => {
-    enterQuestionActive(room, questionId, remainingOverride);
-  }, QUESTION_INTRO_MS);
-
-  if (res) {
-    res.json({
-      ok: true,
-      questionId,
-      remaining: remainingOverride ?? room.remainingQuestionIds.length
-    });
-  }
-};
-
-const runNextQuestion = (room: RoomState) => {
-  if (!room.quizId) {
-    throw new Error('Kein Quiz gesetzt');
-  }
-
-  // Special end-of-segment transitions must be checked BEFORE the "no questions left" guard,
-  // because after Q20 remainingQuestionIds is already empty.
-  const askedCountBefore = room.askedQuestionIds.length;
-
-  // After Q10 reveal, transition to BLITZ
-  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 10 && !room.halftimeTriggered) {
-    room.halftimeTriggered = true;
-    room.nextStage = 'BLITZ';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PRE_BLITZ' });
-    broadcastState(room);
-    return { stage: room.gameState, halftimeTrigger: true };
-  }
-
-  // After Q20 reveal, transition to RUNDLAUF
-  if (room.gameState === 'Q_REVEAL' && askedCountBefore === 20 && !room.finalsTriggered) {
-    room.finalsTriggered = true;
-    room.nextStage = 'RUNDLAUF';
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-    broadcastState(room);
-    return { stage: room.gameState, finalsTrigger: true };
-  }
-
-  // Guard: no more questions left (and no special transition applied above)
-  if (room.remainingQuestionIds.length === 0) {
-    throw new Error('Keine Fragen mehr');
-  }
-
-  // Otherwise start the next question normally
-  const nextId = room.remainingQuestionIds.shift();
-  if (!nextId) {
-    throw new Error('Keine naechste Frage gefunden');
-  }
-  startQuestionWithSlot(room, nextId, room.remainingQuestionIds.length);
-  Object.values(room.teams).forEach((t) => (t.isReady = false));
-  broadcastTeamsReady(room);
-  return { questionId: nextId, remaining: room.remainingQuestionIds.length };
-};
-
-const startOneOfEightTurnState = (room: RoomState, question: AnyQuestion) => {
-  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string }> | undefined) || [];
-  const teamIds = getConnectedTeamIds(room);
-  const raw = teamIds.length ? [...teamIds] : Object.keys(room.teams);
-  // Random start: shuffle turn order
-  const order = raw.sort(() => Math.random() - 0.5);
-  room.oneOfEightTurnOrder = order;
-  room.oneOfEightTurnIndex = 0;
-  room.oneOfEightActiveTeamId = order[0] ?? null;
-  room.oneOfEightUsedChoiceIds = [];
-  room.oneOfEightLoserTeamId = null;
-  room.oneOfEightWinnerTeamIds = [];
-  room.oneOfEightFinished = statements.length === 0 || order.length === 0;
-  if (room.oneOfEightFinished) {
-    room.oneOfEightActiveTeamId = null;
-  }
-};
-
-const concludeOneOfEight = (
-  room: RoomState,
-  question: AnyQuestion,
-  loserTeamId: string | null,
-  winnerTeamIds: string[],
-  detailWinner: string,
-  detailLoser: string,
-  detailNeutral: string
-) => {
-  const basePoints = getQuestionPoints(room, question);
-  const winnerSet = new Set(winnerTeamIds);
-  Object.keys(room.teams).forEach((id) => {
-    const existing = room.answers[id] || { value: null };
-    let awardedPoints = 0;
-    let isCorrect = false;
-    let awardedDetail: string | null = null;
-    if (winnerSet.has(id)) {
-      awardedPoints = basePoints;
-      isCorrect = true;
-      awardedDetail = detailWinner;
-    } else if (loserTeamId && id === loserTeamId) {
-      awardedDetail = detailLoser;
-    } else {
-      awardedDetail = detailNeutral;
-    }
-    room.answers[id] = {
-      ...existing,
-      isCorrect,
-      awardedPoints,
-      awardedDetail,
-      autoGraded: true,
-      tieBreaker: null
-    };
-  });
-
-  room.oneOfEightWinnerTeamIds = winnerTeamIds;
-  room.oneOfEightLoserTeamId = loserTeamId;
-  room.oneOfEightFinished = true;
-  room.oneOfEightActiveTeamId = null;
-  room.questionPhase = 'evaluated';
-  room.timerEndsAt = null;
-  applyRoomState(room, { type: 'HOST_LOCK' });
-
-  const solution = formatSolution(question, room.language);
-  broadcastState(room);
-  io.to(room.roomCode).emit('evaluation:started');
-  io.to(room.roomCode).emit('answersEvaluated', { answers: room.answers, solution });
-  io.to(room.roomCode).emit('timerStopped');
-};
-
-const advanceOneOfEightTurn = (room: RoomState) => {
-  if (room.oneOfEightTurnOrder.length === 0) return;
-  room.oneOfEightTurnIndex = (room.oneOfEightTurnIndex + 1) % room.oneOfEightTurnOrder.length;
-  room.oneOfEightActiveTeamId = room.oneOfEightTurnOrder[room.oneOfEightTurnIndex] ?? null;
-};
-
-const handleOneOfEightSubmission = (
-  room: RoomState,
-  question: AnyQuestion,
-  teamId: string,
-  answer: unknown
-) => {
-  const payload = answer as { choiceId?: string };
-  const choiceId = typeof payload?.choiceId === 'string' ? payload.choiceId.trim() : '';
-  if (!choiceId) throw new Error('Antwort ungültig');
-  if (room.oneOfEightFinished) throw new Error('Runde bereits beendet');
-  if (room.oneOfEightActiveTeamId && room.oneOfEightActiveTeamId !== teamId) {
-    throw new Error('Dieses Team ist nicht am Zug');
-  }
-
-  const statements = ((question as any).bunteTuete?.statements as Array<{ id: string; isFalse?: boolean }> | undefined) || [];
-  const choiceNormalized = choiceId.toLowerCase();
-  const alreadyUsed = room.oneOfEightUsedChoiceIds.some((id) => id.toLowerCase() === choiceNormalized);
-  if (alreadyUsed) throw new Error('Antwort wurde schon gewählt');
-
-  room.answers[teamId] = { value: payload };
-  room.oneOfEightUsedChoiceIds.push(choiceId);
-
-  const falseStmt = statements.find((stmt) => stmt.isFalse);
-  const pickedFalse = falseStmt && choiceNormalized === String(falseStmt.id).toLowerCase();
-
-  if (pickedFalse) {
-    const winners = room.oneOfEightTurnOrder.filter((id) => id !== teamId && room.teams[id]);
-    concludeOneOfEight(
-      room,
-      question,
-      teamId,
-      winners,
-      'Gewonnen durch Fehlpick',
-      'Falsche Aussage gewählt',
-      'Keine Auswahl'
-    );
-    return;
-  }
-
-  // Keine falsche Aussage gewählt: prüfen ob alle richtigen Optionen aufgebraucht sind
-  const allCorrectUsed = statements
-    .filter((stmt) => !stmt.isFalse)
-    .every((stmt) =>
-      room.oneOfEightUsedChoiceIds.some((id) => id.toLowerCase() === String(stmt.id).toLowerCase())
-    );
-
-  if (allCorrectUsed) {
-    // Nur noch die falsche Option übrig → alle Teams gewinnen (Unentschieden mit Punkten)
-    concludeOneOfEight(
-      room,
-      question,
-      null,
-      [...room.oneOfEightTurnOrder],
-      'Alle sicher — falsche Option nicht gewählt',
-      'Alle sicher — falsche Option nicht gewählt',
-      'Alle sicher — falsche Option nicht gewählt'
-    );
-    return;
-  }
-
-  advanceOneOfEightTurn(room);
-  broadcastState(room);
-};
 
 
 
-const revealAnswersForRoom = (room: RoomState) => {
-  if (!room.currentQuestionId) throw new Error('Keine aktive Frage');
-  const question = questionById.get(room.currentQuestionId);
-  if (!question) throw new Error('Frage nicht gefunden');
 
-  if (room.questionPhase === 'answering') {
-    evaluateCurrentQuestion(room);
-  }
-  if (room.questionPhase === 'revealed') {
-    return { answers: room.answers, teams: room.teams };
-  }
 
-  applyRoomState(room, { type: 'HOST_REVEAL' });
-  const basePoints = getQuestionPoints(room, question);
-  Object.entries(room.answers).forEach(([teamId, ans]) => {
-    const isCorrect = ans.isCorrect ?? evaluateAnswer(question, ans.value);
-    const deviation = ans.deviation ?? null;
-    const bestDeviation = ans.bestDeviation ?? null;
-    const awardedPoints =
-      ans.awardedPoints !== undefined && ans.awardedPoints !== null
-        ? ans.awardedPoints
-        : isCorrect
-        ? basePoints
-        : 0;
-    room.answers[teamId] = {
-      ...ans,
-      isCorrect,
-      deviation,
-      bestDeviation,
-      awardedPoints
-    };
-    if (awardedPoints > 0 && room.teams[teamId]) {
-      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + awardedPoints;
-    }
-    io.to(room.roomCode).emit('teamResult', {
-      teamId,
-      isCorrect,
-      deviation,
-      bestDeviation,
-      awardedPoints,
-      awardedDetail: room.answers[teamId].awardedDetail ?? null
-    });
 
-    // Update stats after evaluation
-    if (room.currentQuestionId && room.statsAnswerTimings.has(room.currentQuestionId)) {
-      const timings = room.statsAnswerTimings.get(room.currentQuestionId)!;
-      const teamTiming = timings.find(t => t.teamName === room.teams[teamId]?.name);
-      if (teamTiming) {
-        teamTiming.isCorrect = isCorrect;
-      }
-    }
 
-    // Track wrong answers for common mistakes
-    if (!isCorrect && room.currentQuestionId) {
-      if (!room.statsWrongAnswerCounts.has(room.currentQuestionId)) {
-        room.statsWrongAnswerCounts.set(room.currentQuestionId, new Map());
-      }
-      const answerStr = String(ans.value ?? '');
-      const counts = room.statsWrongAnswerCounts.get(room.currentQuestionId)!;
-      const currentCount = counts.get(answerStr) || 0;
-      counts.set(answerStr, currentCount + 1);
-    }
-  });
 
-  room.questionPhase = 'revealed';
-  const askedCount = room.askedQuestionIds.length;
-  const noQuestionsLeft = room.remainingQuestionIds.length === 0;
-  if (askedCount === 10) {
-    room.nextStage = 'BLITZ';
-  } else if (askedCount >= 20 || noQuestionsLeft) {
-    room.nextStage = 'RUNDLAUF';
-  } else {
-    room.nextStage = null;
-  }
-  broadcastState(room);
-  io.to(room.roomCode).emit('evaluation:revealed');
-  return { answers: room.answers, teams: room.teams };
-};
 
-app.post('/api/rooms/:roomCode/next-question', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  try {
-    const result = withUndoSnapshot(room, () => runNextQuestion(room));
-    if (res.headersSent) return;
-    res.json({ ok: true, ...result });
-  } catch (err) {
-    res.status(400).json({ error: (err as Error).message });
-  }
-});
 
-app.post('/api/rooms/:roomCode/start-question', (req, res) => {
-  const { roomCode } = req.params;
-  const { questionId } = req.body as { questionId?: string };
-  
-  // Validate question ID
-  const qIdValidation = validateQuestionId(questionId);
-  if (!qIdValidation.valid) return res.status(400).json({ error: qIdValidation.error });
-  
-  if (!questionById.has(qIdValidation.value)) {
-    return res.status(400).json({ error: 'Frage nicht gefunden' });
-  }
-  
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  startQuestionWithSlot(room, qIdValidation.value, room.remainingQuestionIds.length, res);
-  Object.values(room.teams).forEach((t) => (t.isReady = false));
-  broadcastTeamsReady(room);
-});
+
+
+
 
 // Slot-Intro ausloesen, ohne Frage-Reihenfolge anzupassen
-app.post('/api/rooms/:roomCode/slot-intro', (req, res) => {
-  const { roomCode } = req.params;
-  const { questionId } = req.body as { questionId?: string };
-  if (!questionId || !questionById.has(questionId)) {
-    return res.status(400).json({ error: 'Ungueltige questionId' });
-  }
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  const question = questionById.get(questionId)!;
-  const localized = localizeQuestion(applyOverrides(question), room.language);
-  const askedInCategory = room.askedQuestionIds.filter((id) => questionById.get(id)?.category === question.category).length;
-  const totalInCategory = room.questionOrder.filter((id) => questionById.get(id)?.category === question.category).length || 5;
-  const slotMeta = buildSlotMeta(localized, Math.max(0, askedInCategory - 1), totalInCategory, room.language);
-  log(room.roomCode, `Slot intro only for question ${questionId}`);
-  io.to(room.roomCode).emit('beamer:show-slot-transition', slotMeta);
-  broadcastState(room);
-  res.json({ ok: true, slotMeta });
-});
 
 // Intro-Slides auf Beamer schicken
-app.post('/api/rooms/:roomCode/show-lobby', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  room.screen = 'lobby' as ScreenState;
-  applyRoomState(room, { type: 'FORCE', next: 'LOBBY' });
-  broadcastState(room);
-  io.to(room.roomCode).emit('beamer:show-rules');
-  res.json({ ok: true });
-});
 
-app.post('/api/rooms/:roomCode/show-intro', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  room.screen = 'intro' as ScreenState;
-  applyRoomState(room, { type: 'FORCE', next: 'INTRO' });
-  broadcastState(room);
-  io.to(room.roomCode).emit('beamer:show-intro', { slides: INTRO_SLIDES });
-  res.json({ ok: true });
-});
 
-app.get('/api/rooms/:roomCode/current-question', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  if (!room.currentQuestionId) return res.json({ question: null });
-  const question = questionById.get(room.currentQuestionId);
-  if (!question) return res.json({ question: null });
-  const meta = buildQuestionMeta(room, room.currentQuestionId);
-  const localized = localizeQuestion(applyOverrides(question), room.language);
-  return res.json({ question: localized, meta });
-});
 
 // Team join (mit Bingo-Board)
-app.post('/api/rooms/:roomCode/join', (req, res) => {
-  const { roomCode } = req.params;
-  const { teamName, teamId, avatarId } = req.body as { teamName?: string; teamId?: string; avatarId?: string };
-  
-  // Validate and sanitize input
-  const roomValidation = validateRoomCode(roomCode);
-  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
-  
-  const teamNameValidation = validateTeamName(teamName);
-  if (!teamNameValidation.valid) return res.status(400).json({ error: teamNameValidation.error });
-  
-  const room = ensureRoom(roomValidation.value);
-  touchRoom(room);
-
-  try {
-    const result = joinTeamToRoom(room, teamNameValidation.value, teamId, avatarId);
-    const payload = { team: result.team, roomCode, board: result.board };
-    return result.created ? res.status(201).json(payload) : res.json(payload);
-  } catch (err) {
-    return res.status(400).json({ error: (err as Error).message });
-  }
-});
 
 // Antworten (speichern, keine Auto-Evaluation)
-app.post('/api/rooms/:roomCode/answer', (req, res) => {
-  const { roomCode } = req.params;
-  const { teamId, answer } = req.body as { teamId?: string; answer?: unknown };
-  
-  // Validate inputs
-  const roomValidation = validateRoomCode(roomCode);
-  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
-  
-  const teamIdValidation = validateTeamId(teamId);
-  if (!teamIdValidation.valid) return res.status(400).json({ error: teamIdValidation.error });
-  
-  const answerValidation = validateAnswer(answer);
-  // Note: validateAnswer always returns valid=true (sanitizes but doesn't reject)
-  
-  const room = ensureRoom(roomValidation.value);
-  touchRoom(room);
-  if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
-  const currentQuestion = questionById.get(room.currentQuestionId);
-  if (!currentQuestion) return res.status(400).json({ error: 'Keine aktive Frage' });
-  if (!room.teams[teamIdValidation.value]) return res.status(400).json({ error: 'Team unbekannt' });
-  if (!isQuestionInputOpen(room.gameState)) {
-    return res.status(400).json({ error: 'Antworten aktuell nicht erlaubt' });
-  }
-
-  const buntePayload = (currentQuestion as any).bunteTuete;
-  if (buntePayload && buntePayload.kind === 'oneOfEight') {
-    try {
-      handleOneOfEightSubmission(room, currentQuestion, teamIdValidation.value, answerValidation.value);
-    } catch (err) {
-      return res.status(400).json({ error: (err as Error).message });
-    }
-    broadcastState(room);
-    return res.json({ ok: true });
-  }
-
-  room.answers[teamIdValidation.value] = { value: answerValidation.value };
-  
-  // Record timing for stats
-  if (room.timerEndsAt && room.questionTimerDurationMs) {
-    const timeElapsedMs = room.questionTimerDurationMs - (room.timerEndsAt - Date.now());
-    if (!room.statsAnswerTimings.has(room.currentQuestionId)) {
-      room.statsAnswerTimings.set(room.currentQuestionId, []);
-    }
-    room.statsAnswerTimings.get(room.currentQuestionId)!.push({
-      teamName: room.teams[teamIdValidation.value]?.name || 'Unknown',
-      timeMs: Math.max(0, timeElapsedMs),
-      answer: answerValidation.value,
-      isCorrect: false, // Will be updated after evaluation
-      questionId: room.currentQuestionId,
-      timestamp: Date.now()
-    });
-  }
-
-  io.to(roomCode).emit('answerReceived', { teamId: teamIdValidation.value });
-
-  const connectedTeamIds = getConnectedTeamIds(room);
-  const activeTeamIds = connectedTeamIds.length ? connectedTeamIds : Object.keys(room.teams);
-  const answeredActive = activeTeamIds.filter((activeId) => room.answers[activeId]).length;
-  if (activeTeamIds.length > 0 && answeredActive >= activeTeamIds.length && room.timerEndsAt) {
-    evaluateCurrentQuestion(room);
-  }
-
-  broadcastState(room);
-  return res.json({ ok: true });
-});
 
 // Antworten automatisch bewerten (ohne reveal)
-app.post('/api/rooms/:roomCode/resolve', (req, res) => {
-  const { roomCode } = req.params;
-  let token = req.query.token as string;
-  
-  // Auth check: Wenn kein Token vorhanden, versuche einen zu erstellen
-  if (!token) {
-    try {
-      const session = createAdminSession(roomCode);
-      token = session.token;
-    } catch (err) {}
-  }
-  
-  if (token && !validateAdminSession(roomCode, token)) {
-    return res.status(401).json({ error: 'Nicht authentifiziert' });
-  }
-
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  if (!room.currentQuestionId) return res.status(400).json({ error: 'Keine aktive Frage' });
-  const ran = evaluateCurrentQuestion(room);
-  if (!ran) return res.status(400).json({ error: 'Keine Auswertung moeglich' });
-  return res.json({ ok: true, answers: room.answers });
-});
 
 // // Legacy Pfad fuer Schaetzfrage / generisch -> gleiche Logik
-app.post('/api/rooms/:roomCode/resolve/estimate', (req, res) => {
-  const { roomCode } = req.params;
-  req.url = `/api/rooms/${roomCode}/resolve`;
-  return app._router.handle(req, res);
-});
-app.post('/api/rooms/:roomCode/resolve/generic', (req, res) => {
-  const { roomCode } = req.params;
-  req.url = `/api/rooms/${roomCode}/resolve`;
-  return app._router.handle(req, res);
-});
 
 // Ergebnisse aufdecken + Scores gutschreiben
-app.post('/api/rooms/:roomCode/reveal', (req, res) => {
-  const { roomCode } = req.params;
-  let token = req.query.token as string;
-  
-  // Auth check: Wenn kein Token vorhanden, versuche einen zu erstellen
-  if (!token) {
-    try {
-      const session = createAdminSession(roomCode);
-      token = session.token;
-    } catch (err) {}
-  }
-  
-  if (token && !validateAdminSession(roomCode, token)) {
-    return res.status(401).json({ error: 'Nicht authentifiziert' });
-  }
 
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  try {
-    const payload = withUndoSnapshot(room, () => revealAnswersForRoom(room));
-    return res.json({ ok: true, ...payload });
-  } catch (err) {
-    return res.status(400).json({ error: (err as Error).message });
-  }
-});
 
-app.post('/api/rooms/:roomCode/step-back', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  try {
-    const result = undoLastHostStep(room);
-    return res.json({ ok: true, ...result });
-  } catch (err) {
-    return res.status(400).json({ error: (err as Error).message });
-  }
-});
 
-app.get('/api/rooms/:roomCode/answers', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  const solution = room.currentQuestionId
-    ? formatSolution(questionById.get(room.currentQuestionId)!, room.language)
-    : undefined;
-  return res.json({ answers: room.answers, teams: room.teams, solution });
-});
 
-app.delete('/api/rooms/:roomCode/teams/:teamId', (req, res) => {
-  const { roomCode, teamId } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-
-  if (!teamId || !room.teams[teamId]) return res.status(404).json({ error: 'Team nicht gefunden' });
-
-  delete room.teams[teamId];
-  delete room.teamBoards[teamId];
-  delete room.answers[teamId];
-
-  broadcastTeamsReady(room);
-  io.to(roomCode).emit('teamKicked', { teamId });
-  broadcastState(room);
-
-  return res.json({ ok: true });
-});
-
-app.post('/api/rooms/:roomCode/answers/override', (req, res) => {
-  const { roomCode } = req.params;
-  const { teamId, isCorrect } = req.body as { teamId?: string; isCorrect?: boolean };
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  if (!teamId || typeof isCorrect !== 'boolean') return res.status(400).json({ error: 'teamId oder isCorrect fehlt' });
-  if (!room.answers[teamId]) room.answers[teamId] = { value: null };
-  const previous = room.answers[teamId].isCorrect;
-  room.answers[teamId].isCorrect = isCorrect;
-
-  // Score anpassen, falls bereits aufgedeckt
-  if (room.questionPhase === 'revealed' && room.currentQuestionId) {
-    const question = questionById.get(room.currentQuestionId);
-    const pts = (question as any)?.points ?? 1;
-    if (room.teams[teamId]) {
-      const delta = (isCorrect ? pts : 0) - (previous ? pts : 0);
-      room.teams[teamId].score = (room.teams[teamId].score ?? 0) + delta;
-    }
-
-    io.to(roomCode).emit('teamResult', { teamId, isCorrect });
-    broadcastState(room);
-    return res.json({ ok: true });
-  }
-
-  broadcastState(room);
-  return res.json({ ok: true });
-});
 
 // Bingo markieren
-app.post('/api/rooms/:roomCode/bingo/mark', (req, res) => {
-  const { roomCode } = req.params;
-  const { teamId, cellIndex } = req.body as { teamId?: string; cellIndex?: number };
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  if (!teamId || !room.teams[teamId]) return res.status(400).json({ error: 'Team unbekannt' });
-  if (cellIndex === undefined || cellIndex < 0 || cellIndex > 24)
-    return res.status(400).json({ error: 'cellIndex ungueltig' });
-  const board = room.teamBoards[teamId];
-  if (!board) return res.status(400).json({ error: 'Kein Board' });
-  if (board[cellIndex].marked) return res.status(400).json({ error: 'Feld bereits markiert' });
-
-  // Optional: nur aktuelle Kategorie erlauben
-  if (room.currentQuestionId) {
-    const q = questionById.get(room.currentQuestionId);
-    if (q && q.category !== board[cellIndex].category) {
-      return res.status(400).json({ error: 'Falsche Kategorie' });
-    }
-  }
-
-  board[cellIndex].marked = true;
-  broadcastState(room);
-  return res.json({ ok: true, board });
-});
 
 // Scoreboard
-app.get('/api/rooms/:roomCode/scoreboard', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  const teams = Object.values(room.teams);
-  return res.json({ teams, boards: room.teamBoards });
-});
 
 // Ergebnis-Export (JSON oder CSV)
-const buildResultRows = (room: RoomState) => {
-  const rows: Array<{
-    teamId: string;
-    teamName: string;
-    score: number;
-    questionId: string;
-    questionText: string;
-    category: QuizCategory;
-    answer: unknown;
-    isCorrect: boolean | null | undefined;
-    deviation: number | null | undefined;
-    bestDeviation: number | null | undefined;
-  }> = [];
 
-  const teams = Object.values(room.teams);
-  const answeredIds = room.askedQuestionIds.length ? room.askedQuestionIds : room.questionOrder;
 
-  answeredIds.forEach((qid) => {
-    const q = questionById.get(qid);
-    if (!q) return;
-    teams.forEach((team) => {
-      const ans = room.answers[team.id];
-      rows.push({
-        teamId: team.id,
-        teamName: team.name,
-        score: team.score ?? 0,
-        questionId: qid,
-        questionText: (q as any).question ?? '',
-        category: q.category,
-        answer: ans?.value ?? null,
-        isCorrect: ans?.isCorrect,
-        deviation: ans?.deviation,
-        bestDeviation: ans?.bestDeviation
-      });
-    });
-  });
-
-  return rows;
-};
-
-const rowsToCsv = (rows: ReturnType<typeof buildResultRows>) => {
-  const header = [
-    'teamId',
-    'teamName',
-    'score',
-    'questionId',
-    'questionText',
-    'category',
-    'answer',
-    'isCorrect',
-    'deviation',
-    'bestDeviation'
-  ];
-  const escape = (v: unknown) => {
-    const str = v === null || v === undefined ? '' : String(v);
-    const needsQuote = str.includes('"') || str.includes(',') || str.includes('\n');
-    const safe = str.replace(/"/g, '""');
-    return needsQuote ? `"${safe}"` : safe;
-  };
-  const lines = rows.map((r) =>
-    [
-      r.teamId,
-      r.teamName,
-      r.score,
-      r.questionId,
-      r.questionText,
-      r.category,
-      r.answer ?? '',
-      r.isCorrect ?? '',
-      r.deviation ?? '',
-      r.bestDeviation ?? ''
-    ].map(escape).join(',')
-  );
-  return [header.join(','), ...lines].join('\n');
-};
-
-app.get('/api/rooms/:roomCode/export', (req, res) => {
-  const { roomCode } = req.params;
-  const format = (req.query as { format?: string }).format;
-  const room = rooms.get(roomCode);
-  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
-
-  const rows = buildResultRows(room);
-  if (format === 'csv') {
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename=\"${roomCode}-results.csv\"`);
-    return res.send(rowsToCsv(rows));
-  }
-  return res.json({ room: roomCode, results: rows });
-});
 
 // Lobby Stats
-app.get('/api/rooms/:roomCode/lobby-stats', (req, res) => {
-  const { roomCode } = req.params;
-  const room = rooms.get(roomCode);
-  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
-
-  const stats = buildLobbyStats(room);
-  return res.json(stats);
-});
 
 // Mark answer as funny/best
-app.post('/api/rooms/:roomCode/mark-funny', (req, res) => {
-  const { roomCode } = req.params;
-  const token = req.query.token as string;
-  
-  // Auth check
-  if (!validateAdminSession(roomCode, token)) {
-    return res.status(401).json({ error: 'Nicht authentifiziert' });
-  }
-
-  const { teamName, questionId, answer } = req.body as { teamName?: string; questionId?: string; answer?: string };
-  const room = rooms.get(roomCode);
-  if (!room) return res.status(404).json({ error: 'Room nicht gefunden' });
-  if (!questionId || answer === undefined) {
-    return res.status(400).json({ error: 'questionId, answer erforderlich' });
-  }
-
-  if (!room.statsFunnyAnswers.has(questionId)) {
-    room.statsFunnyAnswers.set(questionId, []);
-  }
-
-  const funnies = room.statsFunnyAnswers.get(questionId)!;
-  const name = teamName || 'Unknown';
-  const existing = funnies.find(f => f.teamName === name);
-  if (!existing) {
-    const markedAt = Date.now();
-    funnies.push({
-      teamName: name,
-      answer: String(answer),
-      questionId,
-      markedAt
-    });
-
-    const questionText = questionById.get(questionId)?.question || 'Unknown';
-    statsState.funnyAnswers.push({
-      teamName: name,
-      answer: String(answer),
-      questionText,
-      questionId,
-      quizId: room.quizId || undefined,
-      date: new Date(markedAt).toISOString(),
-      markedAt
-    });
-    if (statsState.funnyAnswers.length > 200) statsState.funnyAnswers = statsState.funnyAnswers.slice(-200);
-    persistStats();
-  }
-
-  return res.json({ ok: true, stats: buildLobbyStats(room) });
-});
 
 // Timer
-app.post('/api/rooms/:roomCode/timer/start', (req, res) => {
-  const { roomCode } = req.params;
-  const { seconds } = req.body as { seconds?: number };
-  
-  // Validate room code
-  const roomValidation = validateRoomCode(roomCode);
-  if (!roomValidation.valid) return res.status(400).json({ error: roomValidation.error });
-  
-  // Validate timer seconds (1-3600 seconds = 1 hour max)
-  const timerValidation = validateNumber(seconds ?? DEFAULT_QUESTION_TIME, 1, 3600);
-  if (!timerValidation.valid) return res.status(400).json({ error: timerValidation.error });
-  
-  const room = ensureRoom(roomValidation.value);
-  touchRoom(room);
-  const durationMs = Math.round(timerValidation.value * 1000);
-  startQuestionTimer(room, durationMs);
-  broadcastState(room);
-  return res.json({ ok: true, endsAt: room.timerEndsAt });
-});
 
-app.post('/api/rooms/:roomCode/timer/stop', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  clearQuestionTimers(room);
-  room.timerEndsAt = null;
-  room.questionTimerDurationMs = null;
-  io.to(roomCode).emit('timerStopped');
-  broadcastState(room);
-  return res.json({ ok: true });
-});
 
-app.get('/api/rooms/:roomCode/timer', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  return res.json({
-    timer: {
-      endsAt: room.timerEndsAt,
-      running: Boolean(room.timerEndsAt),
-      durationMs: room.questionTimerDurationMs
-    }
-  });
-});
 
 // Mute/Unmute
-app.post('/api/rooms/:roomCode/toggle-mute', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  room.globalMuted = !room.globalMuted;
-  io.to(roomCode).emit('muteChanged', { muted: room.globalMuted });
-  broadcastState(room);
-  return res.json({ ok: true, muted: room.globalMuted });
-});
 
-app.get('/api/rooms/:roomCode/mute-status', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  return res.json({ muted: room.globalMuted });
-});
 
 // Pause Toggle
-app.post('/api/rooms/:roomCode/toggle-pause', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  touchRoom(room);
-  
-  // Toggle between pause and previous state
-  if (room.gameState === 'SCOREBOARD_PAUSE') {
-    // Resume from pause - go back to scoreboard
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD' });
-  } else {
-    // Enter pause mode
-    applyRoomState(room, { type: 'FORCE', next: 'SCOREBOARD_PAUSE' });
-  }
-  
-  broadcastState(room);
-  return res.json({ ok: true, paused: room.gameState === 'SCOREBOARD_PAUSE' });
-});
 
 // Sprache
-app.get('/api/rooms/:roomCode/language', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  return res.json({ language: room.language });
-});
 
-app.post('/api/rooms/:roomCode/language', (req, res) => {
-  const { roomCode } = req.params;
-  const { language } = req.body as { language?: Language };
-  
-  // Validate language
-  const langValidation = validateLanguage(language);
-  if (!langValidation.valid) return res.status(400).json({ error: langValidation.error });
-  
-  const room = ensureRoom(roomCode);
-  room.language = langValidation.value as any; // Allow 'both' at runtime
-  touchRoom(room);
-  io.to(roomCode).emit('languageChanged', { language: langValidation.value });
-  broadcastState(room);
-  return res.json({ ok: true, language: langValidation.value });
-});
 
 // Fotoblitz timer settings
-app.post('/api/rooms/:roomCode/blitz-timers', (req, res) => {
-  const { roomCode } = req.params;
-  const { displayTimeMs, answerTimeMs } = req.body as { displayTimeMs?: number; answerTimeMs?: number };
-  const room = ensureRoom(roomCode);
-  
-  if (typeof displayTimeMs === 'number' && displayTimeMs >= 5000 && displayTimeMs <= 120000) {
-    room.blitzDisplayTimeMs = displayTimeMs;
-  }
-  if (typeof answerTimeMs === 'number' && answerTimeMs >= 5000 && answerTimeMs <= 120000) {
-    room.blitzAnswerTimeMs = answerTimeMs;
-  }
-  
-  touchRoom(room);
-  broadcastState(room);
-  return res.json({ 
-    ok: true, 
-    displayTimeMs: room.blitzDisplayTimeMs, 
-    answerTimeMs: room.blitzAnswerTimeMs 
-  });
-});
 
-app.get('/api/rooms/:roomCode/blitz-timers', (req, res) => {
-  const { roomCode } = req.params;
-  const room = ensureRoom(roomCode);
-  return res.json({ 
-    displayTimeMs: room.blitzDisplayTimeMs, 
-    answerTimeMs: room.blitzAnswerTimeMs 
-  });
-});
 
 // Frage-Metadaten setzen (z. B. mixedMechanic)
 // 2026-07-08 (Wolf): Legacy-Write-Endpoints /api/questions* entfernt. Sie wurden
@@ -5363,101 +2628,9 @@ app.get('/api/rooms/:roomCode/blitz-timers', (req, res) => {
 // questionOverrideMap — ein kleines Einfallstor. Runtime-Reads/-Helfer bleiben.
 
 // Quizzes löschen
-app.delete('/api/quizzes/:id', requirePin, (req, res) => {
-  const { id } = req.params;
-  if (!id || !quizzes.has(id)) return res.status(404).json({ error: 'Quiz nicht gefunden' });
-  quizzes.delete(id);
-  return res.json({ ok: true });
-});
 
 // --- Lobby Stats Helper Functions ---
 
-const buildLobbyStats = (room: RoomState): LobbyStats => {
-  const fastestAnswers: FastestAnswer[] = [];
-  const funnyAnswers: FunnyAnswer[] = [];
-  const commonWrongAnswersMap = new Map<string, { answer: string; count: number; teams: Set<string>; questionId: string }>();
-
-  // Collect fastest correct answers
-  const allTimings = Array.from(room.statsAnswerTimings.values()).flat();
-  allTimings.sort((a, b) => a.timeMs - b.timeMs);
-  const topFastestCorrect = allTimings.filter(t => t.isCorrect).slice(0, 5);
-
-  for (const timing of topFastestCorrect) {
-    const q = questionById.get(timing.questionId);
-    if (q) {
-      fastestAnswers.push({
-        teamName: timing.teamName,
-        answer: typeof timing.answer === 'string' || typeof timing.answer === 'number' ? timing.answer : String(timing.answer),
-        timeMs: timing.timeMs,
-        questionText: q.question,
-        questionId: timing.questionId,
-        isCorrect: true,
-        timestamp: timing.timestamp
-      });
-    }
-  }
-
-  // Collect funny answers marked by moderator
-  for (const funnies of room.statsFunnyAnswers.values()) {
-    for (const funny of funnies) {
-      const q = questionById.get(funny.questionId);
-      if (q) {
-        funnyAnswers.push({
-          teamName: funny.teamName,
-          answer: funny.answer,
-          questionText: q.question,
-          questionId: funny.questionId,
-          markedAt: funny.markedAt,
-          markedByModerator: true
-        });
-      }
-    }
-  }
-
-  // Collect common wrong answers
-  for (const [qId, answerCounts] of room.statsWrongAnswerCounts.entries()) {
-    const q = questionById.get(qId);
-    if (!q) continue;
-
-    let totalAnswers = 0;
-    for (const count of answerCounts.values()) {
-      totalAnswers += count;
-    }
-    if (totalAnswers === 0) continue;
-
-    for (const [answer, count] of answerCounts.entries()) {
-      const percentage = Math.round((count / totalAnswers) * 100);
-      if (percentage >= 20) { // Only show if >20% chose this
-        const key = `${qId}-${answer}`;
-        commonWrongAnswersMap.set(key, {
-          answer,
-          count,
-          teams: new Set(),
-          questionId: qId
-        });
-      }
-    }
-  }
-
-  const commonWrongAnswers: CommonWrongAnswer[] = Array.from(commonWrongAnswersMap.values())
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5)
-    .map(item => ({
-      answer: item.answer,
-      questionText: questionById.get(item.questionId)?.question || 'Unknown',
-      questionId: item.questionId,
-      count: item.count,
-      percentage: 0, // Will be calculated properly in future if needed
-      teams: Array.from(item.teams)
-    }));
-
-  return {
-    fastestAnswers,
-    funnyAnswers,
-    commonWrongAnswers,
-    lastUpdated: Date.now()
-  };
-};
 
 // --- Room Cleanup (Memory Management) ---
 const ROOM_IDLE_TIMEOUT = 24 * 60 * 60 * 1000; // 24 hours
@@ -5511,30 +2684,8 @@ const adminSessions = new Map<string, AdminSession>();
 const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 hours
 const SESSION_CLEANUP_INTERVAL = 60 * 60 * 1000;
 
-const generateSessionToken = (): string => uuid().split('-').join('').substring(0, 32);
 
-const createAdminSession = (roomCode: string): AdminSession => {
-  const now = Date.now();
-  const session: AdminSession = {
-    roomCode,
-    token: generateSessionToken(),
-    createdAt: now,
-    expiresAt: now + SESSION_DURATION
-  };
-  adminSessions.set(session.token, session);
-  return session;
-};
 
-const validateAdminSession = (roomCode: string, token?: string): boolean => {
-  if (!token) return false;
-  const session = adminSessions.get(token);
-  if (!session || session.roomCode !== roomCode) return false;
-  if (Date.now() > session.expiresAt) {
-    adminSessions.delete(token);
-    return false;
-  }
-  return true;
-};
 
 // Cleanup expired sessions
 setInterval(() => {

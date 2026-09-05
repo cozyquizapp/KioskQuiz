@@ -33,6 +33,7 @@ import { validateQuestion, validateDraft, worstLevel } from './qqValidation';
 import { QQCsvImportModal } from './QQCsvImportModal';
 import { QQMiniPreview } from './QQMiniPreview';
 import { makeEurovisionDraft } from '../data/eurovisionDraftTemplate';
+import { HANDVERLESENE_SAETZE } from '../data/handverleseneSaetze';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── Constants ──────────────────────────────────────────────────────────────────
@@ -690,6 +691,22 @@ export default function QQBuilderPage() {
     const res = await fetch('/api/qq/drafts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) });
     if (res.ok) { const saved = await res.json(); setDrafts(prev => [saved, ...prev]); setActiveDraft(saved); }
   }
+  // 2026-09-05 (Wolf: „5 sets, handverlesen wie meiner"): legt alle fuenf auf
+  // einmal an, nacheinander damit die Reihenfolge in der Liste stimmt. Die
+  // zwanzig CHEESE-Bilder fehlen absichtlich, jede dieser Fragen traegt die
+  // Bildbeschreibung in hostNote. Details im Kopf von handverleseneSaetze.ts.
+  async function createHandverleseneDrafts() {
+    for (const satz of HANDVERLESENE_SAETZE) {
+      const draft = satz.bauen();
+      const res = await fetch('/api/qq/drafts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft),
+      });
+      if (!res.ok) { alert(`Konnte "${satz.titel}" nicht anlegen (${res.status}).`); return; }
+      const saved = await res.json();
+      setDrafts(prev => [saved, ...prev]);
+    }
+    alert(`${HANDVERLESENE_SAETZE.length} Saetze angelegt. In den CHEESE-Fragen steht die gesuchte Bildbeschreibung im Moderator-Hinweis.`);
+  }
   async function saveDraftRaw(draft: QQDraft) {
     setSaving(true);
     try {
@@ -1054,7 +1071,7 @@ export default function QQBuilderPage() {
     }
   }, [activeDraft]);
 
-  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onDelete={deleteDraft} />;
+  if (!activeDraft) return <DraftListScreen drafts={drafts} onOpen={origSetActiveDraft} onCreate={createDraft} onCreateSample={createSampleDraft} onCreateEurovision={createEurovisionDraft} onCreateHandverlesen={createHandverleseneDrafts} onDelete={deleteDraft} />;
 
   return (
     <div style={{ minHeight: '100vh', background: COZY_NAVY, color: '#F8FAFC', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column' }}>
@@ -2983,7 +3000,7 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
 }
 
 // ── Draft list screen ─────────────────────────────────────────────────────────
-function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 2 | 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onDelete: (id: string) => void }) {
+function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onCreateHandverlesen, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 2 | 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onCreateHandverlesen: () => void; onDelete: (id: string) => void }) {
   // 2026-05-10 CozyBuilder Pack A #2: Wolf-Greeting + Random-Spruch.
   const greetings = [
     'Was bauen wir heute, Wolf?',
@@ -3007,6 +3024,7 @@ function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEur
             <button onClick={() => onCreate(4)} style={brandCreateBtn()}>+ Leer (4 Runden)</button>
             <button onClick={onCreateSample} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog</button>
             <button onClick={onCreateEurovision} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }}>🎤 Eurovision Quiz</button>
+            <button onClick={onCreateHandverlesen} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }} title="Legt fünf handverlesene Sätze à 20 Fragen an, zweisprachig, mit Fun Fact auf jeder Frage. Die Bilder für die Schau-mal-Runden fehlen noch und stehen als Hinweis in der Frage.">🎩 5 handverlesene Sätze</button>
           </div>
         </div>
         {/* CozyWolf + Sprechblase rechts oben */}

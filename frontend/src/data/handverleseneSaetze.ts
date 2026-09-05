@@ -24,13 +24,24 @@
 //   * Keine Frage doppelt, weder untereinander noch gegen den Bestand.
 //     Geprueft, nicht angenommen.
 //
-// ⚠️ WAS DIESE DATEI NICHT LIEFERT: die zwanzig CHEESE-Bilder. Ich kann keine
-// Bilder erzeugen, und fremde Bilder ins Produkt zu verlinken waere falsch.
-// Jede CHEESE-Frage traegt deshalb in `hostNote` eine Beschreibung des
-// gesuchten Bildes. Wolf laedt es im Builder hoch und setzt dort auch
-// cheeseLayout und scale, denn das laesst sich nur am Bild entscheiden.
-// Dasselbe Muster wie beim Eurovision-Satz: „der Skeleton liefert die Frage-
-// Struktur, nicht das Material."
+// ── Die zwanzig CHEESE-Bilder ────────────────────────────────────────────────
+// Jede CHEESE-Frage traegt einen `wikipediaTitle`. Der Server holt das Bild
+// beim Lesen der Entwuerfe daraus (`enrichCheeseImagesInDraft` in server.ts),
+// es muss also im Regelfall niemand etwas hochladen.
+//
+// ⚠️ ABER: KEINER DIESER ZWANZIG TITEL IST VERIFIZIERT. Aus dem Container ist
+// wikipedia.org nicht erreichbar (Agent-Proxy, 403 „Host not in allowlist"),
+// ich habe sie also nach bestem Wissen eingetragen und nicht einmal geprueft.
+// Ein Titel, den es nicht gibt, und ein Artikel ohne Kopfbild sehen fuer den
+// Server gleich aus: die Folie bleibt leer, und es merkt jemand am Abend.
+// Wer das ausschliessen will, laesst EINMAL ausserhalb des Containers
+// `node scripts/bilder-pruefen.mjs` laufen. Das aendert nichts und nennt die
+// Folien, die leer blieben.
+//
+// Fuer diesen Fall steht in `hostNote` jeder CHEESE-Frage zusaetzlich eine
+// Beschreibung des gesuchten Bildes, damit man es von Hand hochladen kann.
+// `cheeseLayout` und `scale` bleiben ohnehin Handarbeit, die entscheidet man
+// nur am Bild.
 //
 // Bunte Tuete: je Satz einmal Pin It, Top 5, Heisse Kartoffel und Fix It, also
 // genau die vier aktiven Arten aus QQ_BUNTE_TUETE_ACTIVE. Kein crowdTop und

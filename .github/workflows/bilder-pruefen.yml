@@ -1,0 +1,29 @@
+# Schau-mal-Bilder pruefen
+#
+# 2026-09-05. Die CHEESE-Bilder holt der Server aus Wikipedia. Ob ein
+# hinterlegter Artikel existiert und ein Bild hat, laesst sich nur mit
+# Netzzugang zu wikipedia.org feststellen, und den hat weder der Agent-
+# Container (Proxy, 403) noch zwangslaeufig Wolfs Rechner.
+#
+# GitHubs Runner haben ihn. Deshalb dieser Knopf: Actions oeffnen, Workflow
+# waehlen, "Run workflow" druecken, Ausgabe lesen. Kein Terminal noetig.
+#
+# ⚠️ ABSICHTLICH NICHT IM NORMALEN CI: der Lauf haengt an einem fremden
+# Dienst. Wikipedia kurz nicht erreichbar wuerde sonst jeden Push rot faerben,
+# obwohl am Code nichts falsch ist. Ein blockierender Test, der von aussen
+# abhaengt, ist genau die Sorte, die man irgendwann ignoriert.
+name: Schau-mal-Bilder pruefen
+
+on:
+  workflow_dispatch:
+
+jobs:
+  bilder:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Jeden Wikipedia-Titel abfragen
+        run: node scripts/bilder-pruefen.mjs

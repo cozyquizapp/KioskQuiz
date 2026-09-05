@@ -135,14 +135,40 @@ const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
 // damit der Server nicht versehentlich mit einer oeffentlich bekannten PIN
 // online geht. Nur im Dev greift ein lokaler Default fuer schnelle Iteration.
 const ADMIN_PIN = resolveAdminPin();
+/**
+ * 2026-09-05 (Wolf: „KioskQuiz ist immernoch public, koennte das zu Problemen
+ * fuehren?"). Ja, an genau dieser Stelle, und der Kommentar zwoelf Zeilen
+ * weiter unten wusste es schon:
+ *
+ *   „falls Coolify NODE_ENV nicht auf 'production' setzt
+ *    (die Backend-Env-Liste fuehrt NODE_ENV gar nicht)"
+ *
+ * Der DEV_BYPASS wurde am 2026-07-27 deshalb fail-secure gemacht. Diese
+ * Funktion aber nicht: sie prueft weiter nur `NODE_ENV === 'production'`. Ist
+ * NODE_ENV auf Coolify nicht gesetzt UND ADMIN_PIN auch nicht, dann feuert die
+ * Notbremse nie, und der Server laeuft mit '2506' weiter. Das Tor ist also zu,
+ * aber der Schluessel steht in einem oeffentlichen Repo.
+ *
+ * Jetzt dieselbe Regel wie beim Bypass: als „lokal" gilt nur, was explizit
+ * NODE_ENV=development ist oder ohne MONGODB_URI laeuft. Alles andere zaehlt
+ * als Produktion und braucht einen echten PIN.
+ *
+ * ⚠️ FOLGE: laeuft dort kein ADMIN_PIN, startet der Server nach dem Deploy
+ * NICHT mehr. Das ist Absicht. Ein Server, der mit einem veroeffentlichten
+ * PIN online geht, ist der schlimmere Zustand, und eine Warnung im Log haette
+ * niemand gelesen. Vor dem Deploy in Coolify pruefen, ob ADMIN_PIN gesetzt ist.
+ */
 function resolveAdminPin(): string {
   const pin = process.env.ADMIN_PIN;
   if (pin && pin.length >= 4) return pin;
-  if (process.env.NODE_ENV === 'production') {
-    console.error('[FATAL] ADMIN_PIN fehlt oder ist zu kurz (min. 4 Zeichen). In Produktion erforderlich — Start abgebrochen.');
+  const istLokal = process.env.NODE_ENV === 'development'
+    || (process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI);
+  if (!istLokal) {
+    console.error('[FATAL] ADMIN_PIN fehlt oder ist zu kurz (min. 4 Zeichen). Ausserhalb der lokalen Entwicklung erforderlich — Start abgebrochen.');
+    console.error('[FATAL] Der Vorgabe-PIN steht in einem oeffentlichen Repo. Ohne eigenen PIN waere das Steuerpult offen.');
     process.exit(1);
   }
-  return '2506'; // nur lokaler Dev-Fallback — in Prod unerreichbar (fail-fast oben)
+  return '2506'; // nur lokaler Dev-Fallback
 }
 // Security-Audit 2026-07-05 (#3/#4/#5): PIN-Guard fuer Write-Endpunkte + den
 // sensiblen Feedback-Read. Der PIN kommt vom Frontend automatisch als

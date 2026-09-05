@@ -115,7 +115,23 @@ function fail(ack: unknown, error: unknown): void {
 // socket.data.qqIsMod (gesetzt in qq:joinModerator bei korrektem PIN).
 // Security-Audit 2026-07-05 (#2): In Prod MUSS ADMIN_PIN als Env gesetzt sein
 // (fail-fast in server.ts:resolveAdminPin). Hier derselbe Fallback nur fuer Dev.
-const QQ_ADMIN_PIN = process.env.ADMIN_PIN || '2506';
+// 2026-09-05: hier stand `process.env.ADMIN_PIN || '2506'` ganz ohne
+// Notbremse. Der Kommentar darueber verweist auf den fail-fast in server.ts,
+// und der griff nur bei NODE_ENV === 'production'. Da server.ts jetzt auch
+// ohne gesetztes NODE_ENV abbricht, ist dieser Zweig nur noch lokal
+// erreichbar. Der Ausdruck bleibt trotzdem streng, damit die Socket-Seite
+// nicht still weicher ist als die REST-Seite: derselbe Test, dieselbe Antwort.
+const QQ_ADMIN_PIN = (() => {
+  const pin = process.env.ADMIN_PIN;
+  if (pin && pin.length >= 4) return pin;
+  const istLokal = process.env.NODE_ENV === 'development'
+    || (process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI);
+  if (!istLokal) {
+    console.error('[FATAL] ADMIN_PIN fehlt. Socket-Seite ohne PIN waere offen — Start abgebrochen.');
+    process.exit(1);
+  }
+  return '2506';
+})();
 
 // Events, die JEDER Client (Team-Phone, Beamer, noch-nicht-Mod) senden darf.
 // Quelle: alle assertOwnTeam-Events + alle qq:-Events, die die Team-Seite

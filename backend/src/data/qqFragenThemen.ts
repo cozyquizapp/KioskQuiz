@@ -15,6 +15,11 @@
 //     Geschichte zuschlagen.
 //   * Schach steht unter Sport, das Nike-Logo unter Popkultur.
 //   * „Wie viele Tasten hat ein Standardklavier" ist Musik, nicht Technik.
+//   * Monopoly steht unter Popkultur (Brettspiel), nicht unter Sport.
+//   * Die Bruecken-Sortierfrage steht unter Technologie, nicht Geographie.
+//   * Das Atomium steht unter Kunst (Architektur), die uebrigen Bauwerke
+//     unter Geographie. Das ist inkonsequent und mir bewusst: das Atomium
+//     ist eine Skulptur, der Eiffelturm ein Ortsmerkmal.
 // Aendern kostet hier eine Zeile, das ist Absicht.
 //
 // Vokabular: dieselben Begriffe wie in der Bibliothek und im
@@ -93,6 +98,48 @@ export const QQ_FRAGEN_THEMEN: Record<string, string> = {
   'qq-vol-5-p3-4': 'Wissenschaft',   'qq-vol-5-p4-0': 'Wissenschaft',
   'qq-vol-5-p4-1': 'Sport',          'qq-vol-5-p4-2': 'Geschichte',
   'qq-vol-5-p4-3': 'Wissenschaft',   'qq-vol-5-p4-4': 'Natur & Tiere',
+
+  // ── Spielegruppe Quiz · 23.05.2026 (Wolfs Hand-Satz) ──────────────────────
+  'tonight-p1-q0': 'Geographie',     // Seeweg Hamburg-Vancouver
+  'tonight-p1-q1': 'Sprache',        // Herkunft des Wortes "Tattoo"
+  'tonight-p1-q2': 'Geographie',     // Mount Rushmore (Pin It)
+  'tonight-p1-q3': 'Popkultur',      // NBC-Logo
+  'tonight-p1-q4': 'Essen & Trinken',// Wasabi (Bild)
+  'tonight-p2-q0': 'Popkultur',      // Monopoly-Felder
+  'tonight-p2-q1': 'Literatur',      // meistverkauftes Genre
+  'tonight-p2-q2': 'Essen & Trinken',// Laender mit den meisten Veganern
+  'tonight-p2-q3': 'Film & TV',      // Disney-Trickfilme
+  'tonight-p2-q4': 'Musik',          // Handpan (Bild)
+  'tonight-p3-q0': 'Musik',          // Bring Me The Horizon
+  'tonight-p3-q1': 'Geschichte',     // Brueder Montgolfier
+  'tonight-p3-q2': 'Geographie',     // Flaggen ohne Rot
+  'tonight-p3-q3': 'Musik',          // wer ist KEINE Saengerin
+  'tonight-p3-q4': 'Sport',          // Eiskunstlauf (Bild)
+  'tonight-p4-q0': 'Geographie',     // bewohnte Inseln Griechenlands
+  'tonight-p4-q1': 'Sport',          // zweitgroesste Sportart
+  'tonight-p4-q2': 'Technologie',    // Bruecken nach Spannweite
+  'tonight-p4-q3': 'Geschichte',     // Euro-Einfuehrung
+  'tonight-p4-q4': 'Kunst',          // Atomium (Bild)
+
+  // ── Eurovision Watchparty ─────────────────────────────────────────────────
+  // Ein THEMATISCHER Satz: alle fuenfzehn Fragen sind Musik. Das ist kein
+  // Ungleichgewicht, sondern der Zweck des Satzes, und genau der Fall, den
+  // `scripts/fragen-themen.mjs` nicht als Mangel melden darf.
+  'qq-draft-esc-mp3y6nph-p1-q0-SCHAETZCHEN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p1-q1-MUCHO': 'Musik',
+  'qq-draft-esc-mp3y6nph-p1-q2-ZEHN_VON_ZEHN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p1-q3-CHEESE': 'Musik',
+  'qq-draft-esc-mp3y6nph-p1-q4-BUNTE_TUETE': 'Musik',
+  'qq-draft-esc-mp3y6nph-p2-q0-SCHAETZCHEN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p2-q1-MUCHO': 'Musik',
+  'qq-draft-esc-mp3y6nph-p2-q2-ZEHN_VON_ZEHN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p2-q3-CHEESE': 'Musik',
+  'qq-draft-esc-mp3y6nph-p2-q4-BUNTE_TUETE': 'Musik',
+  'qq-draft-esc-mp3y6nph-p3-q0-SCHAETZCHEN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p3-q1-MUCHO': 'Musik',
+  'qq-draft-esc-mp3y6nph-p3-q2-ZEHN_VON_ZEHN': 'Musik',
+  'qq-draft-esc-mp3y6nph-p3-q3-CHEESE': 'Musik',
+  'qq-draft-esc-mp3y6nph-p3-q4-BUNTE_TUETE': 'Musik',
 };
 
 /**

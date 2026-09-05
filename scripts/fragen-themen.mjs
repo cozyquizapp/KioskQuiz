@@ -38,6 +38,10 @@
  * NUTZUNG:
  *   node scripts/fragen-themen.mjs               alles, was im Repo liegt
  *   node scripts/fragen-themen.mjs --datei=X     zusaetzlich ein Export
+ *   node scripts/fragen-themen.mjs --saetze-datei=X   die Saetze aus einem
+ *                                    Export von /api/qq/drafts statt aus dem
+ *                                    Repo. Das ist der ehrliche Lauf: live
+ *                                    liegen Saetze, die im Repo fehlen.
  *   node scripts/fragen-themen.mjs --saetze      nur die Verteilung je Satz
  *   node scripts/fragen-themen.mjs --selbsttest  muss 4/4 sagen
  */
@@ -62,6 +66,26 @@ function ausDrafts(datei) {
   const roh = JSON.parse(fs.readFileSync(p, 'utf8'));
   if (!Array.isArray(roh)) return [];
   return roh.flatMap((satz) =>
+    (satz.questions ?? []).map((q) => ({
+      quelle: 'Satz',
+      satz: satz.id || satz.title || '(ohne Id)',
+      topic: q.topic || null,
+      text: q.text || '',
+      kategorie: q.category || '?',
+    })));
+}
+
+/* Ein Export von /api/qq/drafts. Dasselbe Format wie qqDrafts.json, nur eben
+ * das, was live wirklich drinsteht - und das kann deutlich abweichen: am
+ * 2026-09-05 lagen dort drei Saetze, die es im Repo gar nicht gibt, darunter
+ * beide handgebauten. Wer nur die Repo-Dateien misst, misst nicht den Abend. */
+function ausSatzExport(pfad) {
+  const p = pfad.startsWith('~') ? path.join(os.homedir(), pfad.slice(1)) : pfad;
+  if (!fs.existsSync(p)) { console.error(`Datei nicht gefunden: ${p}`); process.exit(2); }
+  const roh = JSON.parse(fs.readFileSync(p, 'utf8'));
+  const liste = Array.isArray(roh) ? roh : (roh.drafts ?? roh.items ?? []);
+  if (!Array.isArray(liste)) { console.error('Unbekanntes Format: weder Array noch {drafts:[…]}'); process.exit(2); }
+  return liste.flatMap((satz) =>
     (satz.questions ?? []).map((q) => ({
       quelle: 'Satz',
       satz: satz.id || satz.title || '(ohne Id)',
@@ -133,9 +157,14 @@ if (hat('selbsttest')) {
 }
 
 // ── Lauf ──────────────────────────────────────────────────────────────────
-const saetze = [...ausDrafts('backend/src/data/qqDrafts.json'), ...ausDrafts('backend/src/data/cozyQuizDrafts.json')];
+const saetze = arg('saetze-datei')
+  ? ausSatzExport(arg('saetze-datei'))
+  : [...ausDrafts('backend/src/data/qqDrafts.json'), ...ausDrafts('backend/src/data/cozyQuizDrafts.json')];
 const bibliothek = arg('datei') ? ausExport(arg('datei')) : ausBibliotheksSeed();
 const alle = [...saetze, ...bibliothek];
+if (arg('saetze-datei')) {
+  console.log(`\n(Saetze aus ${arg('saetze-datei')} statt aus dem Repo.)`);
+}
 
 const ohneTopic = alle.filter((q) => !q.topic);
 const mitTopic = alle.filter((q) => q.topic);
@@ -208,8 +237,16 @@ if (mitSatz.length) {
     const mit = qs.filter((q) => q.topic);
     if (!mit.length) { console.log(`  ${id.padEnd(24)} ${String(qs.length).padStart(3)} Fragen, keine mit topic`); continue; }
     const top = zaehle(mit).slice(0, 3).map(([k, v]) => `${k} ${v}`).join(', ');
-    const fehlt = PUBLIKUMSLIEBLINGE.filter((g) => !mit.some((q) => q.topic === g));
-    console.log(`  ${id.padEnd(24)} ${String(qs.length).padStart(3)} Fragen  ${top}${fehlt.length ? `   ⚠️ ohne: ${fehlt.join(', ')}` : ''}`);
+    // Ein THEMATISCHER Satz ist kein Ungleichgewicht, sondern ein Produkt.
+    // Wolf 2026-09-05: „spezifische runden koennten gewuenscht werden oder als
+    // thema gelten (heute abend etc)". Der Eurovision-Satz besteht zu 100 %
+    // aus Musik - ihm „ohne: Film & TV" vorzuhalten waere schlicht falsch.
+    // Schwelle: ein Gebiet stellt mindestens vier Fuenftel des Satzes.
+    const groesstes = zaehle(mit)[0];
+    const thematisch = groesstes[1] / mit.length >= 0.8;
+    const fehlt = thematisch ? [] : PUBLIKUMSLIEBLINGE.filter((g) => !mit.some((q) => q.topic === g));
+    const marke = thematisch ? `   (thematischer Satz: ${groesstes[0]})` : '';
+    console.log(`  ${id.padEnd(24)} ${String(qs.length).padStart(3)} Fragen  ${top}${marke}${fehlt.length ? `   ⚠️ ohne: ${fehlt.join(', ')}` : ''}`);
   }
 }
 console.log('');

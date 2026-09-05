@@ -827,17 +827,27 @@ export default function QQBuilderPage() {
     if (!confirm('Alle EN-Felder neu übersetzen?\nVorhandene EN-Texte werden überschrieben.')) return;
     setTranslating(true);
     try {
+      // 2026-09-05: vorher gab diese Funktion bei JEDEM Fehler '' zurueck,
+      // und der Sweep schrieb das leere Ergebnis in den Satz. Eine einzige
+      // gescheiterte Anfrage hat damit ein Feld geleert, ohne dass es jemand
+      // merkte. Das ist NICHT der Trade-off von oben: der betrifft
+      // Ueberschreiben mit einer Uebersetzung, nicht Leeren bei einem Fehler.
+      // Jetzt bricht der ganze Lauf ab. Gespeichert wird erst ganz am Ende,
+      // der Satz bleibt also unangetastet.
       async function tr(text: string): Promise<string> {
         if (!text?.trim()) return '';
-        try {
-          const res = await fetch('/api/translate', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: text.trim(), source: 'de', target: 'en' }),
-          });
-          if (!res.ok) return '';
-          const data = await res.json();
-          return (data.translatedText as string)?.trim() ?? '';
-        } catch { return ''; }
+        const res = await fetch('/api/translate', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: text.trim(), source: 'de', target: 'en' }),
+        });
+        if (!res.ok) {
+          const grund = await res.json().then((d) => d?.error).catch(() => null);
+          throw new Error(grund || `Übersetzung fehlgeschlagen (${res.status})`);
+        }
+        const data = await res.json();
+        const out = (data.translatedText as string)?.trim();
+        if (!out) throw new Error('Übersetzungsdienst lieferte leeren Text');
+        return out;
       }
 
       const translatedQuestions = await Promise.all(activeDraft.questions.map(async (q) => {
@@ -902,6 +912,8 @@ export default function QQBuilderPage() {
       const newDraft = { ...activeDraft, questions: translatedQuestions };
       setActiveDraft(newDraft);
       await saveDraftRaw(newDraft);
+    } catch (err) {
+      alert(`Übersetzung abgebrochen, der Satz bleibt unverändert.\n\n${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setTranslating(false);
     }

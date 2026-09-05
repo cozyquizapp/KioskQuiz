@@ -292,15 +292,48 @@ app.post('/api/translate', async (req, res) => {
     if (!text) return res.status(400).json({ error: 'text erforderlich' });
     if (source === target) return res.json({ translatedText: text });
 
-    // Use a public translation API with graceful fallback.
+    // 2026-09-05: MyMemory nimmt hoechstens 500 Zeichen. Laengere Anfragen
+    // beantwortet der Dienst mit HTTP 200 und der Fehlermeldung IM
+    // Uebersetzungsfeld. Vorher pruefte diese Route nur `response.ok`, gab
+    // die Meldung als Uebersetzung zurueck, und der Builder schrieb sie in
+    // den Satz. Gemessen im Live-Export vom 05.09.: genau eine Frage hat
+    // einen deutschen Fun Fact ueber 500 Zeichen (tonight-p3-q1, 554), und
+    // genau diese eine traegt als englischen Fun Fact den Satz
+    // „QUERY LENGTH LIMIT EXCEEDED. MAX ALLOWED QUERY : 500 CHARS". Der stand
+    // damit auf der Buehne.
+    const MAX_ZEICHEN = 500;
+    if (text.length > MAX_ZEICHEN) {
+      return res.status(413).json({
+        error: `Zu lang fuer den Uebersetzungsdienst: ${text.length} von hoechstens ${MAX_ZEICHEN} Zeichen. Bitte von Hand uebersetzen oder kuerzen.`,
+      });
+    }
+
     const params = new URLSearchParams({ q: text, langpair: `${source}|${target}` });
     const response = await fetch(`https://api.mymemory.translated.net/get?${params.toString()}`);
     if (!response.ok) {
       return res.status(502).json({ error: 'Übersetzungsdienst nicht erreichbar' });
     }
-    const data = await response.json() as { responseData?: { translatedText?: string } };
+    const data = await response.json() as {
+      responseStatus?: number | string;
+      responseDetails?: string;
+      responseData?: { translatedText?: string };
+    };
     const translated = data?.responseData?.translatedText?.trim();
     if (!translated) return res.status(502).json({ error: 'Keine Übersetzung erhalten' });
+
+    // Der Dienst meldet seinen eigenen Status im Rumpf, unabhaengig vom
+    // HTTP-Status. Alles ausser 200 ist eine Fehlermeldung, kein Text.
+    const status = Number(data.responseStatus);
+    if (Number.isFinite(status) && status !== 200) {
+      return res.status(502).json({ error: `Übersetzungsdienst: ${data.responseDetails || status}` });
+    }
+    // Und der Riegel fuer den Fall, dass der Status mal fehlt: eine Antwort,
+    // die komplett in Grossbuchstaben steht, waehrend die Vorlage es nicht
+    // tut, ist keine Uebersetzung, sondern eine Fehlermeldung.
+    const schreitGross = (t: string) => t === t.toUpperCase() && /[A-Z]{4}/.test(t);
+    if (schreitGross(translated) && !schreitGross(text)) {
+      return res.status(502).json({ error: `Übersetzungsdienst antwortete mit einer Meldung statt mit Text: „${translated.slice(0, 80)}"` });
+    }
 
     return res.json({ translatedText: translated });
   } catch (err) {

@@ -132,8 +132,58 @@ for (const s of saetze) {
   });
 
   // 3. Zweisprachigkeit
-  const ohneEn = qs.filter((q) => !(q.textEn ?? '').trim()).length;
-  if (ohneEn) fehler.push(`${ohneEn} Fragen ohne englischen Text (harte Regel: alles zweisprachig)`);
+  //
+  // 2026-09-05: hier stand nur die Pruefung auf `textEn`. Deshalb ist bis
+  // heute niemandem aufgefallen, dass in den fuenf Vol.-Saetzen KEINE einzige
+  // der hundert Fragen einen englischen Fun Fact hat: ein englischer Tisch
+  // bekommt die Frage, aber nie die Geschichte dahinter. Die harte Regel sagt
+  // „alles zweisprachig", also prueft das hier jetzt auch alles.
+  //
+  // Fehler bleibt nur, was das Spiel unspielbar macht (Frage, Antwort,
+  // Auswahlmoeglichkeiten). Der fehlende Fun Fact ist ein Hinweis: der Abend
+  // laeuft auch ohne ihn, er ist nur aermer.
+  // Was WIE hart zaehlt, haengt daran, was auf der Buehne passiert:
+  //   textEn fehlt      -> Fehler. Ohne Frage kein Spiel.
+  //   answerEn fehlt    -> Hinweis. Die Anzeige faellt auf Deutsch zurueck
+  //                        (CozyQuizQuestionView Z. 3074). ABER: der Abgleich
+  //                        der eingetippten Antwort laeuft gegen answer UND
+  //                        answerEn. Fehlt das englische Wort, wird ein
+  //                        englischer Tisch, der „Pacific" tippt, gegen
+  //                        „Pazifik" geprueft und faelschlich als falsch
+  //                        gewertet. Bei „206" oder „Saturn" ist es egal,
+  //                        deshalb kein pauschaler Fehler.
+  //   Umlaut in der deutschen Antwort -> DANN Fehler: „Bauchspeicheldruese"
+  //                        ist mit Sicherheit kein englisches Wort.
+  //   funFactEn fehlt   -> Hinweis. Der Abend laeuft, er ist nur aermer.
+  // ⚠️ Die Umlaut-Regel ist eine Untergrenze, keine Vollstaendigkeit.
+  // „Pazifik", „Marokko", „Donau" rutschen als blosse Hinweise durch.
+  const deutschSicher = (t) => /[äöüßÄÖÜ]/.test(t ?? '');
+  const zweisprachig = [
+    ['englischen Text', (q) => (q.textEn ?? '').trim(), 'fehler'],
+    ['englische Antwort', (q) => (q.answerEn ?? '').trim(), 'warn'],
+    ['englische Antwort, obwohl die deutsche Umlaute hat', (q) => (q.answerEn ?? '').trim() || !deutschSicher(q.answer), 'fehler'],
+    ['englische Optionen', (q) => !q.options?.length || (q.optionsEn ?? []).filter((o) => (o ?? '').trim()).length === q.options.length, 'warn'],
+    ['englischen Fun Fact', (q) => !(q.funFact ?? '').trim() || (q.funFactEn ?? '').trim(), 'warn'],
+  ];
+  for (const [was, hat, stufe] of zweisprachig) {
+    const n = qs.filter((q) => !hat(q)).length;
+    if (!n) continue;
+    (stufe === 'fehler' ? fehler : warn).push(`${n} Fragen ohne ${was} (harte Regel: alles zweisprachig)`);
+  }
+
+  // Und der Riegel gegen die Sorte Schaden, die der Uebersetzer im Builder
+  // gebaut hat: eine Antwort in Grossbuchstaben, wo die deutsche Vorlage
+  // normal geschrieben ist, ist eine Fehlermeldung des Dienstes, kein Text.
+  // Gemessen am 05.09. im Live-Export: „QUERY LENGTH LIMIT EXCEEDED. MAX
+  // ALLOWED QUERY : 500 CHARS" stand als englischer Fun Fact im Satz.
+  const schreit = (t) => typeof t === 'string' && t === t.toUpperCase() && /[A-Z]{4}/.test(t);
+  qs.forEach((q, i) => {
+    for (const feld of ['textEn', 'answerEn', 'funFactEn']) {
+      const de = feld.replace(/En$/, '');
+      if (schreit(q[feld]) && !schreit(q[de]))
+        fehler.push(`Frage ${i + 1}: ${feld} ist eine Fehlermeldung, kein Text: „${String(q[feld]).slice(0, 60)}"`);
+    }
+  });
 
   // 4. Gebiete
   const themen = qs.map((q) => q.topic).filter(Boolean);

@@ -852,11 +852,32 @@ Zeile in jener Datei. Strittig sind vor allem die fünf Bauwerke (unter
 Geographie statt Kunst/Geschichte), Schach (Sport) und das Nike-Logo
 (Popkultur).
 
+**🎯 Entscheidung Wolf 2026-09-05:** „ich denke die meisten standard sets
+sollten alle kategorien ausgeglichen haben, da die meisten gruppen wohl bunt
+gemischte runden enjoyen würden. spezifische runden könnten gewünscht werden
+oder als thema gelten (heute abend etc)."
+
+Also: **Standard-Sätze bunt gemischt, thematische Sätze als bewusste Option**
+(Musik-Special, 90er-Abend, Firmen-Thema). Vol. 2 bis 5 sind heute faktisch
+thematisch, ohne dass es so gemeint war.
+
+⚠️ Die harte Grenze dabei, gemessen: die Mechanik steht an der POSITION fest.
+Jede Runde ist Schätzchen, Mu-Cho, Bunte Tüte, Ten Chips, Picture This, in
+dieser Reihenfolge. Ein 20er-Satz hat damit genau **4 Plätze je Mechanik**.
+„Alle Gebiete ausgeglichen" ist bei 13 Gebieten und 20 Fragen nicht möglich.
+Realistisch sind 6 bis 8 Gebiete je Satz mit je 2 bis 3 Fragen.
+
 **Noch offen:**
 1. **Vokabular vereinheitlichen:** die Bibliothek kennt „Sprache" UND
    „Sprache & Etymologie". Das Werkzeug meldet es, rechnet es aber bewusst
    nicht zusammen. Eine Zeile im Bibliotheks-Seed.
-2. **Gegen die LIVE-Bibliothek laufen lassen.** Dort liegen zusätzlich die rund
+2. **🎧 Audio-Fragen: eingebaut, aber null benutzt.** `QQQuestion.musicUrl`
+   plus `musicMode: 'audioQuestion'` gibt es samt „Höre genau hin"-Hinweis auf
+   der Bühne, und `/api/upload/question-audio` nimmt Dateien an. **Keine
+   einzige der 110 Fragen nutzt es.** Das ist der größte Hebel für die
+   Musik-Lücke: eine echte Musikrunde („welcher Song?") ist im Kneipenquiz
+   die beliebteste Runde und hier ohne neue Technik machbar.
+3. **Gegen die LIVE-Bibliothek laufen lassen.** Dort liegen zusätzlich die rund
    5000 OpenTriviaDB-Fragen, die ihr topic aus der TDB-Kategorie bekommen.
    Export: `/api/qq/library/items?limit=10000` im Browser speichern, dann
    `node scripts/fragen-themen.mjs --datei=…`. Aus einer Container-Sitzung ist

@@ -126,6 +126,7 @@ import {
   getTranslationStats, testDeeplConnection,
   runRetranslate, getRetranslateStatus,
 } from './data/triviaDbImport';
+import { ergaenzeFragenThemen } from './data/qqFragenThemen';
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
@@ -3395,6 +3396,9 @@ try {
   if (fs.existsSync(qqDraftsPath)) {
     const loaded = JSON.parse(fs.readFileSync(qqDraftsPath, 'utf-8'));
     if (Array.isArray(loaded)) qqDrafts = loaded;
+    // 2026-09-05: Wissensgebiete nachtragen, falls die Datei aus einer Zeit
+    // stammt, in der es sie noch nicht gab. Nur fehlende, nie ueberschreiben.
+    if (ergaenzeFragenThemen(qqDrafts) > 0) persistQQDrafts();
   }
 } catch {
   console.error('Fehler beim Laden von qqDrafts.json');
@@ -3403,6 +3407,7 @@ try {
 // Seed sample drafts if none exist
 if (qqDrafts.length === 0) {
   qqDrafts = createSampleQQDrafts();
+  ergaenzeFragenThemen(qqDrafts);
   persistQQDrafts();
 }
 
@@ -3790,6 +3795,23 @@ app.get('/api/qq/drafts', async (_req, res) => {
     }
     if (dbVolRefreshed > 0) {
       console.log(`[migration] Refreshed ${dbVolRefreshed} qq-vol-* drafts in DB with 4 gewinnt + Bluff`);
+    }
+    // ── Migration 2026-09-05: Wissensgebiete (topic) nachtragen ─────────────
+    // Wolf: „trag die topics in die saetze ein". Ohne das misst
+    // scripts/fragen-themen.mjs die Bibliothek und nicht den Abend.
+    // ⚠️ STRENG ADDITIV: nur Fragen OHNE topic bekommen eins, ein im Builder
+    // gesetztes Gebiet wird nie ueberschrieben. Gespeichert wird nur, was sich
+    // wirklich geaendert hat, sonst schriebe dieser Endpunkt bei jedem Aufruf.
+    let dbThemen = 0;
+    for (const d of cleanDbDrafts as any[]) {
+      const n = ergaenzeFragenThemen([d]);
+      if (n > 0) {
+        d.updatedAt = Date.now();
+        try { await saveQQDraftToDB(d); dbThemen += n; } catch { /* ignore */ }
+      }
+    }
+    if (dbThemen > 0) {
+      console.log(`[migration] ${dbThemen} Fragen haben ein Wissensgebiet bekommen`);
     }
     // 2026-05-07 (Wolf 'Weltliteratur-Frage sollte laengst durch Flagge-ohne-
     // Rot ersetzt sein'): hotPotato-Fragen pro qq-vol-* Draft auf Source-Stand

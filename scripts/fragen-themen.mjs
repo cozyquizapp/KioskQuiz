@@ -178,6 +178,24 @@ for (const gebiet of PUBLIKUMSLIEBLINGE) {
   }
 }
 
+// ── Vokabular: zwei Namen fuer dasselbe Gebiet? ───────────────────────────
+// Aufgefallen am 2026-09-05: die Bibliothek kennt „Sprache" UND „Sprache &
+// Etymologie". Zusammengerechnet wird hier NICHT - das waere eine stille
+// Entscheidung ueber fremde Daten. Gemeldet wird es, damit jemand sie faellt.
+{
+  const namen = [...new Set(mitTopic.map((q) => q.topic))];
+  const paare = [];
+  for (const a of namen) for (const b of namen) {
+    if (a !== b && b.startsWith(a)) paare.push([a, b]);
+  }
+  if (paare.length) {
+    console.log(`\n⚠️  Zwei Namen fuer vermutlich dasselbe Gebiet:`);
+    paare.forEach(([a, b]) => console.log(`      „${a}" und „${b}"`));
+    console.log(`    Nicht zusammengerechnet. Wer sie vereinheitlicht, sollte es in`);
+    console.log(`    der Quelle tun, nicht hier.`);
+  }
+}
+
 // ── Je Satz: das ist die Zahl, die den Abend bestimmt ──────────────────────
 const mitSatz = saetze.filter((q) => q.satz);
 if (mitSatz.length) {

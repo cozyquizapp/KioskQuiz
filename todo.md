@@ -843,11 +843,19 @@ und Vol. 5 (Sport/Natur) haben **null** Musik und **null** Film, Vol. 3 null
 Film. Praktisch die gesamte Popkultur steckt in Vol. 2. Wer Vol. 4 spielt,
 hört den ganzen Abend kein Lied.
 
-**Zwei offene Schritte, beide brauchen eine Entscheidung von Wolf:**
-1. **`topic` in die Spiel-Sätze eintragen.** Das Feld gibt es (`QQQuestion.topic`,
-   shared/quarterQuizTypes.ts:631), die Bibliothek nutzt es, die Sätze nicht.
-   Solange das fehlt, misst das Werkzeug die Bibliothek und nicht den Abend.
-   Meine Einordnung der 100 liegt vor und wäre ein prüfbarer Commit.
+✅ **`topic` ist eingetragen** (2026-09-05). Alle 110 Fragen der Spiel-Sätze,
+Zuordnung in `backend/src/data/qqFragenThemen.ts`, dazu eine streng additive
+Nachziehung in der Datenbank. Damit misst das Werkzeug jetzt den Abend.
+
+⚠️ Die Zuordnung sind URTEILE, keine Messungen. Wer widerspricht, ändert eine
+Zeile in jener Datei. Strittig sind vor allem die fünf Bauwerke (unter
+Geographie statt Kunst/Geschichte), Schach (Sport) und das Nike-Logo
+(Popkultur).
+
+**Noch offen:**
+1. **Vokabular vereinheitlichen:** die Bibliothek kennt „Sprache" UND
+   „Sprache & Etymologie". Das Werkzeug meldet es, rechnet es aber bewusst
+   nicht zusammen. Eine Zeile im Bibliotheks-Seed.
 2. **Gegen die LIVE-Bibliothek laufen lassen.** Dort liegen zusätzlich die rund
    5000 OpenTriviaDB-Fragen, die ihr topic aus der TDB-Kategorie bekommen.
    Export: `/api/qq/library/items?limit=10000` im Browser speichern, dann

@@ -22,6 +22,24 @@ function q(id: string, phase: number, qi: number, cat: string, data: Record<stri
 const now = Date.now();
 
 // ─── HARRY POTTER ──────────────────────────────────────────────────────
+// ⚠️ RECHTE: Dieser Satz ist als TESTSATZ gedacht, nicht als Produkt.
+// Wolf 2026-09-05: „harry potter ist schwierig wegen der rights von bildern".
+// Die Lage, nach Schaerfe sortiert:
+//   * Die FRAGEN sind das kleinste Problem. Dass Voldemort mit Geburtsnamen
+//     Tom Marvolo Riddle heisst, ist eine Tatsache, und Tatsachen sind nicht
+//     urheberrechtlich geschuetzt, auch nicht aus einem Roman.
+//   * Die BILDER sind das groesste. In der Live-Datenbank haengen an den drei
+//     CHEESE-Fragen ein Gryffindor-Wappen, der Sprechende Hut und Gleis 9 3/4.
+//     Alle drei sind Film-Designs von Warner Bros., das Wappen zusaetzlich
+//     Markenzeichen. Hier in der Quelle stehen deshalb KEINE Bild-URLs, und
+//     hier kommt auch kein `wikipediaTitle` hin: es gibt zu diesen Motiven
+//     kein frei lizenziertes Bild, und das ist kein Zufall.
+//   * Der NAME im Titel ist das zweitgroesste. Ein bezahlter Abend, der
+//     „Harry Potter Quiz" heisst, wirbt mit fremder Marke. Warner Bros. geht
+//     gegen nicht lizenzierte Harry-Potter-Quizabende aktiv vor.
+// Wer daraus ein Produkt machen will: eigener Titel, eigene oder frei
+// lizenzierte Bilder, Fragen ohne Filmmaterial. Und bei echtem Umsatz ist das
+// eine Frage fuer einen Anwalt, nicht fuer den Code-Kommentar.
 const hp = 'qq-test-harry-potter';
 const hpQs = [
   // Phase 1: Charaktere & Häuser
@@ -153,17 +171,19 @@ const hhQs = [
   q(`${hh}-p1-0`, 1, 0, 'SCHAETZCHEN', {
     text: 'Wie viele Brücken hat Hamburg insgesamt? (mehr als Venedig + Amsterdam zusammen)',
     textEn: 'How many bridges does Hamburg have? (more than Venice + Amsterdam combined)',
-    answer: '2500', targetValue: 2500, unit: 'Brücken',
-    funFact: 'Hamburg hat ca. 2.500 Brücken — mehr als Venedig (~400), Amsterdam (~1.500) und London (~30) zusammen.'
+    answer: '2500', answerEn: '2500', targetValue: 2500, unit: 'Brücken', unitEn: 'bridges',
+    funFact: 'Hamburg hat ca. 2.500 Brücken — mehr als Venedig (~400), Amsterdam (~1.500) und London (~30) zusammen.',
+    funFactEn: 'Hamburg has around 2,500 bridges — more than Venice (~400), Amsterdam (~1,500) and London (~30) combined.'
   }),
   q(`${hh}-p1-1`, 1, 1, 'MUCHO', {
     text: 'Welcher Stadtteil ist Hamburgs ältester?',
     textEn: 'Which is Hamburg\'s oldest district?',
-    answer: 'Altstadt',
+    answer: 'Altstadt', answerEn: 'Altstadt',
     options: ['Altstadt', 'St. Pauli', 'Eimsbüttel', 'Wandsbek'],
     optionsEn: ['Altstadt', 'St. Pauli', 'Eimsbüttel', 'Wandsbek'],
     correctOptionIndex: 0,
-    funFact: 'Die Hamburger Altstadt geht zurück auf die Hammaburg, eine Burg aus dem 9. Jahrhundert.'
+    funFact: 'Die Hamburger Altstadt geht zurück auf die Hammaburg, eine Burg aus dem 9. Jahrhundert.',
+    funFactEn: 'Hamburg\'s Altstadt goes back to the Hammaburg, a castle from the 9th century that gave the city its name.'
   }),
   q(`${hh}-p1-2`, 1, 2, 'BUNTE_TUETE', {
     text: 'Nenne einen Hamburger Stadtteil — reihum!',
@@ -174,32 +194,38 @@ const hhQs = [
   q(`${hh}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', {
     text: 'Welcher Hamburger Klub spielt im Volksparkstadion?',
     textEn: 'Which Hamburg club plays at Volksparkstadion?',
-    answer: 'Hamburger SV',
+    answer: 'Hamburger SV', answerEn: 'Hamburger SV',
     options: ['Hamburger SV', 'FC St. Pauli', 'Holstein Kiel'],
     optionsEn: ['Hamburger SV', 'FC St. Pauli', 'Holstein Kiel'],
     correctOptionIndex: 0,
-    funFact: 'St. Pauli spielt im Millerntor-Stadion auf St. Pauli, der HSV im Volksparkstadion in Bahrenfeld.'
+    funFact: 'St. Pauli spielt im Millerntor-Stadion auf St. Pauli, der HSV im Volksparkstadion in Bahrenfeld.',
+    funFactEn: 'St. Pauli play at the Millerntor stadium in St. Pauli, HSV at the Volksparkstadion in Bahrenfeld.'
   }),
   q(`${hh}-p1-4`, 1, 4, 'CHEESE', {
     text: 'Welches Hamburger Wahrzeichen ist hier zu sehen?',
     textEn: 'Which Hamburg landmark is shown?',
-    answer: 'Elbphilharmonie', answerEn: 'Elbphilharmonie'
+    answer: 'Elbphilharmonie', answerEn: 'Elbphilharmonie',
+    wikipediaTitle: { de: 'Elbphilharmonie', en: 'Elbphilharmonie' },
+    funFact: 'Die Elphi steht auf einem Kaispeicher von 1963. Geplant waren 77 Millionen Euro, gekostet hat sie 866. Die Glasfassade besteht aus 1.100 einzeln gebogenen Scheiben.',
+    funFactEn: 'The Elphi sits on a 1963 warehouse. It was budgeted at 77 million euros and cost 866. The glass facade is made of 1,100 individually curved panes.'
   }),
   // Phase 2: Hafen & Norden
   q(`${hh}-p2-0`, 2, 0, 'SCHAETZCHEN', {
     text: 'Wie hoch ist die Elbphilharmonie?',
     textEn: 'How tall is the Elbphilharmonie?',
-    answer: '110', targetValue: 110, unit: 'Meter',
-    funFact: 'Die Elphi ist 110 m hoch — höher als der bisherige Maßstab Michel (132 m mit Turm) zumindest auf Glas-Ebene knapp drunter.'
+    answer: '110', answerEn: '110', targetValue: 110, unit: 'Meter', unitEn: 'metres',
+    funFact: 'Mit 110 Metern bleibt die Elphi knapp unter dem Michel (132 m). Der Bau dauerte zehn Jahre, sechs davon lag die Baustelle wegen Streits still.',
+    funFactEn: 'At 110 metres the Elphi stays just below the Michel (132 m). Construction took ten years, six of which the site stood idle amid disputes.'
   }),
   q(`${hh}-p2-1`, 2, 1, 'MUCHO', {
     text: 'Welcher Fluss mündet bei Hamburg in die Elbe?',
     textEn: 'Which river flows into the Elbe near Hamburg?',
-    answer: 'Alster',
+    answer: 'Alster', answerEn: 'Alster',
     options: ['Alster', 'Bille', 'Süderelbe', 'Krückau'],
     optionsEn: ['Alster', 'Bille', 'Süderelbe', 'Krückau'],
     correctOptionIndex: 0,
-    funFact: 'Die Alster wird in der Innenstadt zur Außen- und Binnenalster aufgestaut — Wahrzeichen.'
+    funFact: 'Die Alster wird in der Innenstadt zur Außen- und Binnenalster aufgestaut. Der Stausee entstand schon um 1190 durch eine Mühle, ist also älter als fast alles darum herum.',
+    funFactEn: 'In the city centre the Alster is dammed into the Outer and Inner Alster. The lake was created around 1190 by a mill, making it older than almost everything around it.'
   }),
   q(`${hh}-p2-2`, 2, 2, 'BUNTE_TUETE', {
     text: 'Sortiere die Hamburger Stadtteile nach Einwohnerzahl (größter zuerst).',
@@ -216,58 +242,71 @@ const hhQs = [
       criteriaEn: 'most residents first',
       itemValues: ['~57.000', '~94.000', '~22.000', '~70.000']
     },
-    funFact: 'Rahlstedt ist mit ~94.000 Einwohnern der bevölkerungsreichste Stadtteil — größer als manche deutsche Mittelstadt.'
+    answerEn: 'Rahlstedt, Billstedt, Eimsbüttel, St. Pauli',
+    funFact: 'Rahlstedt ist mit ~94.000 Einwohnern der bevölkerungsreichste Stadtteil — größer als manche deutsche Mittelstadt.',
+    funFactEn: 'With around 94,000 residents, Rahlstedt is the most populous district — bigger than many a German town.'
   }),
   q(`${hh}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', {
     text: 'Welches Hamburger Original ist KEIN Fischbrötchen?',
     textEn: 'Which Hamburg classic is NOT a fish sandwich?',
-    answer: 'Pannfisch',
+    answer: 'Pannfisch', answerEn: 'Pannfisch',
     options: ['Pannfisch', 'Bismarck-Brötchen', 'Matjes-Brötchen'],
     optionsEn: ['Pannfisch', 'Bismarck sandwich', 'Matjes sandwich'],
     correctOptionIndex: 0,
-    funFact: 'Pannfisch ist gebratener Fisch mit Senfsoße — kein Brötchen, sondern ein Pfannengericht.'
+    funFact: 'Pannfisch ist gebratener Fisch mit Senfsoße, kein Brötchen. Ursprünglich war es ein Resteessen: der Fisch vom Vortag kam am nächsten Tag noch einmal in die Pfanne.',
+    funFactEn: 'Pannfisch is fried fish in mustard sauce, not a sandwich. It began as a leftovers dish: yesterday\'s fish went back into the pan the next day.'
   }),
   q(`${hh}-p2-4`, 2, 4, 'CHEESE', {
     text: 'Welcher Hamburger Bahnhof ist hier zu sehen?',
     textEn: 'Which Hamburg station is shown?',
-    answer: 'Hauptbahnhof', answerEn: 'Main Station'
+    answer: 'Hauptbahnhof', answerEn: 'Main Station',
+    wikipediaTitle: { de: 'Hamburg Hauptbahnhof', en: 'Hamburg_Hauptbahnhof' },
+    funFact: 'Mit rund 550.000 Reisenden am Tag ist er der meistfrequentierte Bahnhof Deutschlands. Die Halle von 1906 überspannt 73 Meter ohne eine einzige Stütze dazwischen.',
+    funFactEn: 'With around 550,000 travellers a day it is Germany\'s busiest station. The 1906 hall spans 73 metres without a single supporting pillar in between.'
   }),
   // Phase 3: Kultur & Geschichte
   q(`${hh}-p3-0`, 3, 0, 'SCHAETZCHEN', {
     text: 'Wie viele Konsulate hat Hamburg? (mehr als jede andere Stadt der Welt)',
     textEn: 'How many consulates does Hamburg have? (more than any other city)',
-    answer: '105', targetValue: 105, unit: 'Konsulate',
-    funFact: 'Hamburg hat über 100 Konsulate — mehr als New York. Erbe der Hansezeit als Welthandelsstadt.'
+    answer: '105', answerEn: '105', targetValue: 105, unit: 'Konsulate', unitEn: 'consulates',
+    funFact: 'Hamburg hat über 100 Konsulate, mehr als New York. Das ist Erbe der Hansezeit: wer Handel treiben wollte, brauchte eine Vertretung im Hafen.',
+    funFactEn: 'Hamburg has over 100 consulates, more than New York. That is a legacy of the Hanseatic era: anyone who wanted to trade needed a presence at the port.'
   }),
   q(`${hh}-p3-1`, 3, 1, 'MUCHO', {
     text: 'In welchem Jahr brannte der „Große Brand" von Hamburg?',
     textEn: 'In which year did Hamburg\'s „Great Fire" rage?',
-    answer: '1842',
+    answer: '1842', answerEn: '1842',
     options: ['1842', '1813', '1892', '1755'],
     optionsEn: ['1842', '1813', '1892', '1755'],
     correctOptionIndex: 0,
-    funFact: 'Der Große Brand zerstörte 1842 ein Viertel der Innenstadt — danach wurden weite Teile neu im Klassizismus gebaut.'
+    funFact: 'Der Große Brand zerstörte 1842 ein Viertel der Innenstadt. Er brannte drei Tage, und gelöscht wurde er am Ende, indem man ganze Häuserzeilen sprengte.',
+    funFactEn: 'The Great Fire of 1842 destroyed a quarter of the city centre. It burned for three days and was finally stopped by blowing up entire rows of houses.'
   }),
   q(`${hh}-p3-2`, 3, 2, 'BUNTE_TUETE', {
     text: 'Sortiert diese Hamburger Bauwerke nach Baujahr — ältestes zuerst.',
     textEn: 'Sort these Hamburg landmarks by year built — oldest first.',
     answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', answerEn: 'St. Michael\'s, City Hall, Köhlbrand Bridge, Elbphilharmonie',
     bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Michel', 'Köhlbrandbrücke', 'Rathaus'], itemsEn: ['Elbphilharmonie', 'St. Michael\'s Church', 'Köhlbrand Bridge', 'City Hall'], correctOrder: [1, 3, 2, 0], criteria: 'nach Baujahr (ältestes zuerst)', criteriaEn: 'by year built (oldest first)', itemValues: ['2017', '1786', '1974', '1897'] },
-    funFact: 'Zwischen dem Michel (vollendet 1786) und der Elbphilharmonie (2017) liegen über 230 Jahre Hamburger Baugeschichte.'
+    funFact: 'Zwischen dem Michel (vollendet 1786) und der Elbphilharmonie (2017) liegen über 230 Jahre Hamburger Baugeschichte.',
+    funFactEn: 'Over 230 years of Hamburg building history separate the Michel (completed 1786) from the Elbphilharmonie (2017).'
   }),
   q(`${hh}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', {
     text: 'Welche Band kommt aus Hamburg?',
     textEn: 'Which band is from Hamburg?',
-    answer: 'Tocotronic',
+    answer: 'Tocotronic', answerEn: 'Tocotronic',
     options: ['Tocotronic', 'Wir sind Helden', 'Silbermond'],
     optionsEn: ['Tocotronic', 'Wir sind Helden', 'Silbermond'],
     correctOptionIndex: 0,
-    funFact: 'Tocotronic gilt als Speerspitze der „Hamburger Schule" — Indie-Pop mit deutschsprachigen Texten.'
+    funFact: 'Tocotronic gilt als Speerspitze der „Hamburger Schule", Indie-Pop mit deutschen Texten. Gegründet 1993, benannt nach einem japanischen Handheld-Spiel.',
+    funFactEn: 'Tocotronic are seen as the spearhead of the „Hamburger Schule", indie pop with German lyrics. Formed in 1993, named after a Japanese handheld game.'
   }),
   q(`${hh}-p3-4`, 3, 4, 'CHEESE', {
     text: 'Welcher Hamburger Stadtteil ist hier zu sehen?',
     textEn: 'Which Hamburg district is shown?',
-    answer: 'Speicherstadt', answerEn: 'Speicherstadt'
+    answer: 'Speicherstadt', answerEn: 'Speicherstadt',
+    wikipediaTitle: { de: 'Speicherstadt', en: 'Speicherstadt' },
+    funFact: 'Der größte zusammenhängende Lagerhauskomplex der Welt, seit 2015 UNESCO-Welterbe. Er steht komplett auf Eichenpfählen, die im Schlick der Elbe stecken.',
+    funFactEn: 'The largest contiguous warehouse complex in the world, a UNESCO World Heritage Site since 2015. It stands entirely on oak piles driven into the Elbe silt.'
   }),
 ];
 
@@ -666,7 +705,7 @@ export const QQ_EXTRA_TEST_DRAFTS: QQTestDraft[] = [
   },
   {
     id: hh,
-    title: '🐟 Hamburg (Test)',
+    title: '🐟 Hamburg',
     phases: 3,
     language: 'both',
     questions: hhQs,

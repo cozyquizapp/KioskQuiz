@@ -185,6 +185,22 @@ for (const s of saetze) {
     }
   });
 
+  // 3b. Schau-mal ohne Bild
+  // Eine CHEESE-Frage lautet „was ist hier zu sehen" - ohne Bild ist sie
+  // unbeantwortbar, und das faellt erst auf der Buehne auf. Gemessen am
+  // 05.09.: der Hamburg-Satz hatte drei solche Folien, seit Monaten leer.
+  // Hinweis und nicht Fehler, weil der Server das Bild noch aus Wikipedia
+  // nachholen kann, wenn `wikipediaTitle` gesetzt ist. Welche Titel dabei
+  // wirklich treffen, sagt nur `scripts/bilder-pruefen.mjs`.
+  {
+    const ohneBild = qs.filter((q) => q.category === 'CHEESE' && !q.image?.url);
+    const ohneAlles = ohneBild.filter((q) => !q.wikipediaTitle?.de && !q.wikipediaTitle?.en);
+    if (ohneAlles.length)
+      warn.push(`${ohneAlles.length} Schau-mal-Fragen ohne Bild und ohne Wikipedia-Titel (leere Folie)`);
+    else if (ohneBild.length)
+      warn.push(`${ohneBild.length} Schau-mal-Fragen ohne Bild, aber mit Wikipedia-Titel (bilder-pruefen.mjs sagt, ob er trifft)`);
+  }
+
   // 4. Gebiete
   const themen = qs.map((q) => q.topic).filter(Boolean);
   const zaehl = {};

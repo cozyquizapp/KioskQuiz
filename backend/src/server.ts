@@ -3757,20 +3757,47 @@ async function fetchWikipediaThumbnail(title: string, lang: 'de' | 'en'): Promis
   }
 }
 
+// 2026-09-05: Die Quelle des Titels ist jetzt zweistufig. Zuerst das Feld
+// `wikipediaTitle` an der Frage selbst, dann die alte ID-Tabelle oben. Grund:
+// die Tabelle haengt an festen Fragen-IDs und funktioniert deshalb nur bei
+// qq-vol-*. Saetze, die der Builder anlegt, tragen einen Zeitstempel in der
+// Entwurfs-ID, ihre Fragen-IDs sind also jedes Mal andere.
+//
+// ⚠️ NICHT VERIFIZIERT, WELCHE TITEL TREFFEN: aus dem Container ist
+// wikipedia.org nicht erreichbar (Agent-Proxy, 403 "Host not in allowlist").
+// Ein Titel, den es nicht gibt, oder ein Artikel ohne Bild faellt hier still
+// durch. Deshalb protokolliert der Aufrufer jede CHEESE-Frage, die leer
+// bleibt, und `scripts/bilder-pruefen.mjs` listet sie ausserhalb des
+// Containers auf. Eine leere Schau-mal-Folie faellt sonst erst am Abend auf.
+function cheeseWikipediaTitles(q: any): { de?: string; en?: string } | null {
+  const amFeld = q?.wikipediaTitle;
+  if (amFeld && (amFeld.de || amFeld.en)) return amFeld;
+  return QQ_CHEESE_WIKIPEDIA_TITLES[q?.id] ?? null;
+}
+
 async function enrichCheeseImagesInDraft(draft: any): Promise<boolean> {
   if (!Array.isArray(draft?.questions)) return false;
   let changed = false;
   for (const q of draft.questions) {
     if (q?.category !== 'CHEESE') continue;
     if (q?.image?.url) continue; // schon ein Bild
-    const titles = QQ_CHEESE_WIKIPEDIA_TITLES[q?.id];
+    const titles = cheeseWikipediaTitles(q);
     if (!titles) continue;
     let url: string | null = null;
-    if (titles.de) url = await fetchWikipediaThumbnail(titles.de, 'de');
-    if (!url && titles.en) url = await fetchWikipediaThumbnail(titles.en, 'en');
+    let quelle: string | undefined;
+    if (titles.de) {
+      url = await fetchWikipediaThumbnail(titles.de, 'de');
+      if (url) quelle = `https://de.wikipedia.org/wiki/${encodeURIComponent(titles.de)}`;
+    }
+    if (!url && titles.en) {
+      url = await fetchWikipediaThumbnail(titles.en, 'en');
+      if (url) quelle = `https://en.wikipedia.org/wiki/${encodeURIComponent(titles.en)}`;
+    }
     if (url) {
-      q.image = { url, layout: 'fullscreen', animation: 'none' };
+      q.image = { url, layout: 'fullscreen', animation: 'none', quelle };
       changed = true;
+    } else {
+      console.warn(`[cheese-bild] ${draft?.id}/${q?.id}: kein Bild gefunden (${JSON.stringify(titles)})`);
     }
   }
   return changed;
@@ -3781,7 +3808,10 @@ async function enrichCheeseImagesInDraft(draft: any): Promise<boolean> {
   try {
     let anyChanged = false;
     for (const d of qqDrafts) {
-      if (!isQQVolDraft(d.id)) continue;
+      // 2026-09-05: der Filter auf qq-vol-* ist weg. Er war der Grund, warum
+      // die drei Schau-mal-Folien im Hamburg-Satz leer blieben, obwohl der
+      // Mechanismus daneben lag. Jetzt entscheidet der Inhalt: wer einen
+      // Titel hat, bekommt ein Bild.
       const c = await enrichCheeseImagesInDraft(d);
       if (c) anyChanged = true;
     }
@@ -3845,6 +3875,100 @@ app.get('/api/qq/drafts', async (_req, res) => {
     }
     if (dbThemen > 0) {
       console.log(`[migration] ${dbThemen} Fragen haben ein Wissensgebiet bekommen`);
+    }
+    // ── 2026-09-05: CHEESE-Bilder auch fuer Saetze aus der DB ───────────────
+    // Die Anreicherung beim Start laeuft nur ueber die Datei-Entwuerfe. Was in
+    // der DB liegt, hat sie nie gesehen, und die DB gewinnt beim Lesen. Genau
+    // deshalb blieben die drei Schau-mal-Folien im Hamburg-Satz leer, obwohl
+    // der Satz seit Monaten existiert.
+    // Nur Fragen OHNE Bild werden angefasst, ein hochgeladenes Bild bleibt
+    // also unberuehrt. Gespeichert wird nur bei echter Aenderung.
+    let dbBilder = 0;
+    for (const d of cleanDbDrafts as any[]) {
+      const braucht = (d?.questions ?? []).some((q: any) =>
+        q?.category === 'CHEESE' && !q?.image?.url && cheeseWikipediaTitles(q));
+      if (!braucht) continue;
+      if (await enrichCheeseImagesInDraft(d)) {
+        d.updatedAt = Date.now();
+        try { await saveQQDraftToDB(d); dbBilder++; } catch { /* ignore */ }
+      }
+    }
+    if (dbBilder > 0) {
+      console.log(`[migration] CHEESE-Bilder in ${dbBilder} DB-Entwuerfen ergaenzt`);
+    }
+    // ── 2026-09-05: eine kaputte Frage in den zwei Testsaetzen reparieren ───
+    // Gemessen im Live-Export: in `qq-test-hamburg` und `qq-test-harry-potter`
+    // steht auf Platz p3-2 nicht die themenpassende Fix-It-Frage aus der
+    // Quelle, sondern generisches Fuellmaterial (Tier-Lebenserwartung
+    // beziehungsweise Spotify-Streams). Beide Saetze, derselbe Platz, also
+    // ein alter Kopierfehler und keine Absicht.
+    //
+    // ⚠️ BEWUSST ENG: nur diese eine Frage, nur in diesen zwei Entwuerfen, und
+    // nur wenn dort noch genau der bekannte Fuelltext steht. Die Alternative
+    // waere gewesen, die Quelle generell fuer massgeblich zu erklaeren und bei
+    // Abweichung zu ueberschreiben. Das haette jede spaetere Aenderung im
+    // Builder still zurueckgedreht, und Hamburg soll ja gerade wachsen.
+    {
+      const KAPUTT: Record<string, string> = {
+        'qq-test-hamburg-p3-2': 'Sortiere die Tiere nach durchschnittlicher Lebenserwartung.',
+        'qq-test-harry-potter-p3-2': 'Sortiere die Songs nach Spotify-Gesamtstreams.',
+      };
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { QQ_EXTRA_TEST_DRAFTS } = require('./data/qqExtraTestDrafts') as { QQ_EXTRA_TEST_DRAFTS: any[] };
+      const quelleById = new Map<string, any>(QQ_EXTRA_TEST_DRAFTS.map((d: any) => [d.id, d]));
+      let repariert = 0;
+      for (const d of cleanDbDrafts as any[]) {
+        const quelle = quelleById.get(d?.id);
+        if (!quelle || !Array.isArray(d?.questions)) continue;
+        let dirty = false;
+        for (let i = 0; i < d.questions.length; i++) {
+          const lq = d.questions[i];
+          const erwartetKaputt = KAPUTT[lq?.id];
+          if (!erwartetKaputt || lq?.text !== erwartetKaputt) continue;
+          const qq = quelle.questions.find((x: any) => x?.id === lq?.id);
+          if (!qq) continue;
+          d.questions[i] = { ...lq, ...qq };
+          dirty = true;
+        }
+        if (dirty) {
+          d.updatedAt = Date.now();
+          try { await saveQQDraftToDB(d); repariert++; } catch { /* ignore */ }
+        }
+      }
+      if (repariert > 0) {
+        console.log(`[migration] Fuellfrage p3-2 in ${repariert} Testsatz/-saetzen aus der Quelle ersetzt`);
+      }
+    }
+    // ── 2026-09-05: fehlende EN-Felder und wikipediaTitle aus der Quelle ────
+    // Fuellt NUR, was fehlt. Ein im Builder gesetzter Wert bleibt stehen.
+    // Betrifft die Repo-Testsaetze, deren DB-Kopie sonst nie erfaehrt, dass
+    // die Quelle inzwischen englische Antworten und Fun Facts hat.
+    {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { QQ_EXTRA_TEST_DRAFTS } = require('./data/qqExtraTestDrafts') as { QQ_EXTRA_TEST_DRAFTS: any[] };
+      const quelleById = new Map<string, any>(QQ_EXTRA_TEST_DRAFTS.map((d: any) => [d.id, d]));
+      const FELDER = ['answerEn', 'funFact', 'funFactEn', 'unitEn', 'wikipediaTitle'] as const;
+      let gefuellt = 0;
+      for (const d of cleanDbDrafts as any[]) {
+        const quelle = quelleById.get(d?.id);
+        if (!quelle || !Array.isArray(d?.questions)) continue;
+        let dirty = false;
+        for (const lq of d.questions) {
+          const qq = quelle.questions.find((x: any) => x?.id === lq?.id);
+          if (!qq) continue;
+          for (const f of FELDER) {
+            const leer = lq[f] === undefined || lq[f] === null || lq[f] === '';
+            if (leer && qq[f] !== undefined) { lq[f] = qq[f]; dirty = true; }
+          }
+        }
+        if (dirty) {
+          d.updatedAt = Date.now();
+          try { await saveQQDraftToDB(d); gefuellt++; } catch { /* ignore */ }
+        }
+      }
+      if (gefuellt > 0) {
+        console.log(`[migration] Fehlende EN-Felder in ${gefuellt} Testsatz/-saetzen aus der Quelle gefuellt`);
+      }
     }
     // 2026-05-07 (Wolf 'Weltliteratur-Frage sollte laengst durch Flagge-ohne-
     // Rot ersetzt sein'): hotPotato-Fragen pro qq-vol-* Draft auf Source-Stand

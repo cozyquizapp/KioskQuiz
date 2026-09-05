@@ -828,6 +828,32 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
+**🎵 Musik und Film kommen zu kurz (Wolf 2026-09-05, gemessen).** Wolf: „wie
+ausgeglichen ist mein fragencontent? ich glaube zb musik kommt sehr kurz?
+filme?" Ja, deutlich. Werkzeug dafür: `node scripts/fragen-themen.mjs`.
+
+Gemessen an den Startdaten im Repo (100 Fragen der fünf Allgemeinwissens-Sätze
+von Hand eingeordnet, 89 Bibliotheks-Fragen über ihr `topic`-Feld):
+Musik 5 %, Film & TV 3 %. Im üblichen Kneipenquiz ist jedes davon eine von
+sechs Runden.
+
+⚠️ Der schärfere Befund ist nicht die Gesamtzahl, sondern die Verteilung JE
+SATZ. Die fünf Sätze sind thematisch, nicht gemischt: Vol. 4 (Technik/Essen)
+und Vol. 5 (Sport/Natur) haben **null** Musik und **null** Film, Vol. 3 null
+Film. Praktisch die gesamte Popkultur steckt in Vol. 2. Wer Vol. 4 spielt,
+hört den ganzen Abend kein Lied.
+
+**Zwei offene Schritte, beide brauchen eine Entscheidung von Wolf:**
+1. **`topic` in die Spiel-Sätze eintragen.** Das Feld gibt es (`QQQuestion.topic`,
+   shared/quarterQuizTypes.ts:631), die Bibliothek nutzt es, die Sätze nicht.
+   Solange das fehlt, misst das Werkzeug die Bibliothek und nicht den Abend.
+   Meine Einordnung der 100 liegt vor und wäre ein prüfbarer Commit.
+2. **Gegen die LIVE-Bibliothek laufen lassen.** Dort liegen zusätzlich die rund
+   5000 OpenTriviaDB-Fragen, die ihr topic aus der TDB-Kategorie bekommen.
+   Export: `/api/qq/library/items?limit=10000` im Browser speichern, dann
+   `node scripts/fragen-themen.mjs --datei=…`. Aus einer Container-Sitzung ist
+   Prod nicht erreichbar.
+
 **🪝 Die restlichen bedingten Hooks: gemessen, und der Befund entwarnt
 (2026-08-30).** Es sind **29, nicht 31** (zwei sassen in Dateien, die beim
 Aufräumen weggefallen sind). Verteilung: QQBeamerPage 15, QQProgressTree 6,

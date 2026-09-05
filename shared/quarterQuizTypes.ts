@@ -592,6 +592,20 @@ export interface QQQuestion {
   answer: string;
   answerEn?: string;
   image?: QQQuestionImage;
+  /** 2026-09-05: Wikipedia-Artikel, aus dem sich das CHEESE-Bild holen laesst.
+   *  Der Server macht das beim Start und beim Lesen der Entwuerfe
+   *  (`enrichCheeseImagesInDraft`), sofern noch kein Bild gesetzt ist.
+   *
+   *  WARUM AM FELD UND NICHT IN EINER TABELLE: die aeltere Zuordnung
+   *  `QQ_CHEESE_WIKIPEDIA_TITLES` in server.ts haengt an der Fragen-ID. Das
+   *  funktioniert bei qq-vol-*, deren IDs fest sind, aber nicht bei Saetzen,
+   *  die der Builder anlegt: deren Entwurfs-ID traegt einen Zeitstempel, die
+   *  Fragen-IDs sind also bei jedem Anlegen andere. Am Feld haengt es
+   *  unabhaengig von der ID und ueberlebt Kopieren und Umbenennen.
+   *
+   *  Beide Sprachen, weil der deutsche Artikel oft kein Bild hat. Der Server
+   *  probiert erst `de`, dann `en`. */
+  wikipediaTitle?: { de?: string; en?: string };
   // SCHAETZCHEN
   targetValue?: number;
   unit?: string;
@@ -949,6 +963,12 @@ export interface QQQuestionImage {
    *  (= undefined), fällt der Beamer auf Auto-Detection zurück (Image-Dimension-
    *  basiert) — Backward-Compat zu alten Drafts. Nur für category=CHEESE relevant. */
   cheeseLayout?: 'landscape' | 'portrait';
+  /** 2026-09-05: Woher das Bild stammt, als URL. Gesetzt von der
+   *  Wikipedia-Anreicherung (Artikel-Adresse). Die Buehne zeigt es heute
+   *  nicht an, aber ohne dieses Feld steht nirgends, woher ein Bild kommt,
+   *  und bei CC-BY-SA-Bildern ist die Namensnennung formal verlangt. Lieber
+   *  die Herkunft festhalten, als sie zu verlieren. */
+  quelle?: string;
 }
 
 // ── Option image (for MUCHO / ZEHN_VON_ZEHN answer cards) ─────────────────────

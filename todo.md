@@ -828,6 +828,91 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
+**🧪 Fragensätze neu bauen (Wolf 2026-09-05).** Wolf: „ich würde alle bis auf
+mein set löschen und alle neu anlegen. tatsächlich waren einige antworten
+fehlerhaft, das heißt beim einbau brauchen wir überprüfung."
+
+Entschieden (AskUserQuestion, 05.09.):
+* **Wolfs eigenes Set liegt in Mongo**, nicht im Repo. Die neun Sätze, die ich
+  sehe, sind alle Vorlagen und Testsätze.
+* **Wolf löscht selbst im Builder.** Ich fasse die Live-Daten nicht an und
+  baue die neuen Sätze als Vorlage zum Importieren.
+
+**Nächster Schritt liegt bei Wolf:** Export von `/api/qq/drafts` schicken,
+damit sein Set sichtbar wird und beim Aufräumen nicht versehentlich mitgeht.
+
+Werkzeug dafür ist da: `node scripts/satz-pruefer.mjs`. Es prüft Mechanik
+(dieselben Regeln wie `qqStartGame`, mit Drift-Riegel), Struktur,
+Zweisprachigkeit, Gebiete-Vielfalt und Alterung, plus Doppelungen quer über
+alle Sätze.
+
+⚠️ Was es NICHT kann: prüfen, ob eine Antwort inhaltlich stimmt. Fachliche
+Richtigkeit bleibt Handarbeit.
+
+**Befund der ersten Prüfung (0 Fehler, 21 Hinweise):** vier Fragen kommen in
+zwei Sätzen vor; Vol. 4 und Vol. 5 haben nur 5 Gebiete und je ein Gebiet mit
+9 von 20 Fragen; fünf Fragen altern von selbst („Stand 2024").
+
+**Fachlich durchgesehen, keine glatt falsche Antwort gefunden**, aber fünf
+streitanfällige: Beatles 13 Alben (12 in UK), Vatikan „Latein" (Arbeitssprache
+ist Italienisch), Pizzen pro Kopf 30 (nicht belegbar), 5 größte Städte
+(quellenabhängig), Planet mit den meisten Monden (veraltet laufend).
+
+**🎵 Musik und Film kommen zu kurz (Wolf 2026-09-05, gemessen).** Wolf: „wie
+ausgeglichen ist mein fragencontent? ich glaube zb musik kommt sehr kurz?
+filme?" Ja, deutlich. Werkzeug dafür: `node scripts/fragen-themen.mjs`.
+
+Gemessen an den Startdaten im Repo (100 Fragen der fünf Allgemeinwissens-Sätze
+von Hand eingeordnet, 89 Bibliotheks-Fragen über ihr `topic`-Feld):
+Musik 5 %, Film & TV 3 %. Im üblichen Kneipenquiz ist jedes davon eine von
+sechs Runden.
+
+⚠️ Der schärfere Befund ist nicht die Gesamtzahl, sondern die Verteilung JE
+SATZ. Die fünf Sätze sind thematisch, nicht gemischt: Vol. 4 (Technik/Essen)
+und Vol. 5 (Sport/Natur) haben **null** Musik und **null** Film, Vol. 3 null
+Film. Praktisch die gesamte Popkultur steckt in Vol. 2. Wer Vol. 4 spielt,
+hört den ganzen Abend kein Lied.
+
+✅ **`topic` ist eingetragen** (2026-09-05). Alle 110 Fragen der Spiel-Sätze,
+Zuordnung in `backend/src/data/qqFragenThemen.ts`, dazu eine streng additive
+Nachziehung in der Datenbank. Damit misst das Werkzeug jetzt den Abend.
+
+⚠️ Die Zuordnung sind URTEILE, keine Messungen. Wer widerspricht, ändert eine
+Zeile in jener Datei. Strittig sind vor allem die fünf Bauwerke (unter
+Geographie statt Kunst/Geschichte), Schach (Sport) und das Nike-Logo
+(Popkultur).
+
+**🎯 Entscheidung Wolf 2026-09-05:** „ich denke die meisten standard sets
+sollten alle kategorien ausgeglichen haben, da die meisten gruppen wohl bunt
+gemischte runden enjoyen würden. spezifische runden könnten gewünscht werden
+oder als thema gelten (heute abend etc)."
+
+Also: **Standard-Sätze bunt gemischt, thematische Sätze als bewusste Option**
+(Musik-Special, 90er-Abend, Firmen-Thema). Vol. 2 bis 5 sind heute faktisch
+thematisch, ohne dass es so gemeint war.
+
+⚠️ Die harte Grenze dabei, gemessen: die Mechanik steht an der POSITION fest.
+Jede Runde ist Schätzchen, Mu-Cho, Bunte Tüte, Ten Chips, Picture This, in
+dieser Reihenfolge. Ein 20er-Satz hat damit genau **4 Plätze je Mechanik**.
+„Alle Gebiete ausgeglichen" ist bei 13 Gebieten und 20 Fragen nicht möglich.
+Realistisch sind 6 bis 8 Gebiete je Satz mit je 2 bis 3 Fragen.
+
+**Noch offen:**
+1. **Vokabular vereinheitlichen:** die Bibliothek kennt „Sprache" UND
+   „Sprache & Etymologie". Das Werkzeug meldet es, rechnet es aber bewusst
+   nicht zusammen. Eine Zeile im Bibliotheks-Seed.
+2. **🎧 Audio-Fragen: eingebaut, aber null benutzt.** `QQQuestion.musicUrl`
+   plus `musicMode: 'audioQuestion'` gibt es samt „Höre genau hin"-Hinweis auf
+   der Bühne, und `/api/upload/question-audio` nimmt Dateien an. **Keine
+   einzige der 110 Fragen nutzt es.** Das ist der größte Hebel für die
+   Musik-Lücke: eine echte Musikrunde („welcher Song?") ist im Kneipenquiz
+   die beliebteste Runde und hier ohne neue Technik machbar.
+3. **Gegen die LIVE-Bibliothek laufen lassen.** Dort liegen zusätzlich die rund
+   5000 OpenTriviaDB-Fragen, die ihr topic aus der TDB-Kategorie bekommen.
+   Export: `/api/qq/library/items?limit=10000` im Browser speichern, dann
+   `node scripts/fragen-themen.mjs --datei=…`. Aus einer Container-Sitzung ist
+   Prod nicht erreichbar.
+
 **🪝 Die restlichen bedingten Hooks: gemessen, und der Befund entwarnt
 (2026-08-30).** Es sind **29, nicht 31** (zwei sassen in Dateien, die beim
 Aufräumen weggefallen sind). Verteilung: QQBeamerPage 15, QQProgressTree 6,

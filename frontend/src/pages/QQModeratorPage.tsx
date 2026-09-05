@@ -5,7 +5,7 @@ import { QQSetupFlow } from './QQSetupFlow';
 import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
-  QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
+  QQQuestion, QQLanguage, QQCategory, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
   QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys, QQ_QUESTIONS_PER_PHASE,
   qqDraftFormat, QQ_DRAFT_FORMAT_LABELS, type QQDraftFormat,
@@ -2810,8 +2810,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     const lg: 'de' | 'en' = s.language === 'en' ? 'en' : 'de';
                     const roundLabel = qqHasPhaseNames(s, lg) ? qqPhaseName(s, lg) : `Runde ${s.gamePhaseIndex}/${s.totalPhases}`;
                     const mult = qqArenaFinaleMult(s);
+                    // 2026-09-05 (Wolf: „habe ich im moderator die info welche
+                    // kategorie wir gerade spielen? ich finde so schnell keinen
+                    // hinweis"). Nein, gab es nicht. Der Beamer zeigt sie
+                    // (CozyQuizQuestionView Z. 976), das Host-Sheet auch
+                    // (qqHostCheatsheet Z. 124), nur das Steuerpult nicht.
+                    // Beleg, dass das kein Versehen von heute war: diese Datei
+                    // importierte QQ_CATEGORY_LABELS und QQ_CATEGORY_COLORS in
+                    // Zeile 8 und benutzte beide nie. Jemand hatte es vor.
+                    // Kein neues Element, dieselbe Pille wie Runde und Frage,
+                    // nur als erste, weil sie die Handgriffe bestimmt.
+                    const cat = s.currentQuestion?.category;
+                    const catLabel = cat ? QQ_CATEGORY_LABELS[cat]?.[lg] : null;
                     return (
                       <>
+                        {cat && catLabel && <Pill label={catLabel} color={qmKategorieFarbe(cat)} />}
                         <Pill label={roundLabel} color={QQ_COLORS.blue500} />
                         <Pill label={`Frage ${(s.questionIndex % QQ_QUESTIONS_PER_PHASE) + 1}/${QQ_QUESTIONS_PER_PHASE}`} color="#6366f1" />
                         {mult > 1 && <Pill label={mult === 3 ? 'Schlussfrage ×3' : 'Finale ×2'} color={QQ_COLORS.brandPink} />}
@@ -5999,6 +6012,26 @@ function MiniGrid({ state: s }: { state: QQStateUpdate }) {
       )}
     </div>
   );
+}
+
+/**
+ * Kategoriefarbe fuer die Pille im Steuerpult.
+ *
+ * 2026-09-05, gemessen statt geschaetzt: die Pille setzt die Farbe als TEXT
+ * auf `--qm-bg-soft` (#14101F), bei 12px fett. WCAG verlangt dafuer 4.5:1.
+ *   Schaetzchen  #F59E0B  8.70:1  ✓
+ *   Mu-Cho       #3B82F6  5.08:1  ✓
+ *   Bunte Tuete  #EF4444  4.97:1  ✓
+ *   Zehn von 10  #22C55E  8.20:1  ✓
+ *   Schau mal    #8B5CF6  4.41:1  ✗ knapp drunter
+ * Nur „Schau mal" wird deshalb hier aufgehellt, und zwar auf #A78BFA (6.87:1),
+ * eine Farbe, die es im Projekt schon gibt (OnlyConnect-Hinweise, Konfetti).
+ * ⚠️ NUR HIER. QQ_CATEGORY_COLORS bleibt unangetastet: der Beamer nutzt
+ * dieselben Werte auf einem anderen Grund, und die Buehnenfarben sind
+ * eingefroren.
+ */
+function qmKategorieFarbe(cat: QQCategory): string {
+  return cat === 'CHEESE' ? '#A78BFA' : QQ_CATEGORY_COLORS[cat];
 }
 
 function Pill({ label, color }: { label: string; color: string }) {

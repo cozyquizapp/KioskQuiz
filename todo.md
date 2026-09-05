@@ -828,6 +828,36 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
+**🧪 Fragensätze neu bauen (Wolf 2026-09-05).** Wolf: „ich würde alle bis auf
+mein set löschen und alle neu anlegen. tatsächlich waren einige antworten
+fehlerhaft, das heißt beim einbau brauchen wir überprüfung."
+
+Entschieden (AskUserQuestion, 05.09.):
+* **Wolfs eigenes Set liegt in Mongo**, nicht im Repo. Die neun Sätze, die ich
+  sehe, sind alle Vorlagen und Testsätze.
+* **Wolf löscht selbst im Builder.** Ich fasse die Live-Daten nicht an und
+  baue die neuen Sätze als Vorlage zum Importieren.
+
+**Nächster Schritt liegt bei Wolf:** Export von `/api/qq/drafts` schicken,
+damit sein Set sichtbar wird und beim Aufräumen nicht versehentlich mitgeht.
+
+Werkzeug dafür ist da: `node scripts/satz-pruefer.mjs`. Es prüft Mechanik
+(dieselben Regeln wie `qqStartGame`, mit Drift-Riegel), Struktur,
+Zweisprachigkeit, Gebiete-Vielfalt und Alterung, plus Doppelungen quer über
+alle Sätze.
+
+⚠️ Was es NICHT kann: prüfen, ob eine Antwort inhaltlich stimmt. Fachliche
+Richtigkeit bleibt Handarbeit.
+
+**Befund der ersten Prüfung (0 Fehler, 21 Hinweise):** vier Fragen kommen in
+zwei Sätzen vor; Vol. 4 und Vol. 5 haben nur 5 Gebiete und je ein Gebiet mit
+9 von 20 Fragen; fünf Fragen altern von selbst („Stand 2024").
+
+**Fachlich durchgesehen, keine glatt falsche Antwort gefunden**, aber fünf
+streitanfällige: Beatles 13 Alben (12 in UK), Vatikan „Latein" (Arbeitssprache
+ist Italienisch), Pizzen pro Kopf 30 (nicht belegbar), 5 größte Städte
+(quellenabhängig), Planet mit den meisten Monden (veraltet laufend).
+
 **🎵 Musik und Film kommen zu kurz (Wolf 2026-09-05, gemessen).** Wolf: „wie
 ausgeglichen ist mein fragencontent? ich glaube zb musik kommt sehr kurz?
 filme?" Ja, deutlich. Werkzeug dafür: `node scripts/fragen-themen.mjs`.
